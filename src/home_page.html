@@ -13,6 +13,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       const url = "ws://127.0.0.1:5757/ws"
       const webSocket = new WebSocket(url)
+      webSocket.onconnect = () => {
+        webSocket.send("asdf")
+      }
       webSocket.onmessage = (event) => {
         console.log(event.data);
       };

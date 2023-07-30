@@ -1,11 +1,3 @@
-//! Example chat application.
-//!
-//! Run with
-//!
-//! ```not_rust
-//! cargo run -p example-chat
-//! ```
-
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -23,6 +15,7 @@ use std::{
 };
 use tokio::sync::broadcast;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use uuid::Uuid;
 
 // Our shared state
 struct AppState {
@@ -73,40 +66,55 @@ async fn websocket_handler(
 // connected client / user, for which we will spawn two independent tasks (for
 // receiving / sending chat messages).
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
+    dbg!("h2");
     // By splitting, we can send and receive at the same time.
     let (mut sender, mut receiver) = stream.split();
+    let mut username = String::new();
+    let name_uuid = Uuid::new_v4().simple().to_string();
+    dbg!(&name_uuid);
+    check_username(&state, &mut username, &name_uuid);
+    dbg!("h3");
 
-    // // Username gets set in the receive loop, if it's valid.
-    // let mut username = String::new();
-    // // Loop until a text message is found.
-    while let Some(Ok(message)) = receiver.next().await {
-        if let Message::Text(name) = message {
-            //         // If username that is sent by client is not taken, fill username string.
-            //         check_username(&state, &mut username, &name);
-            //         // If not empty we want to quit the loop else we want to quit function.
-            //         if !username.is_empty() {
-            //             break;
-            //         } else {
-            //             // Only send our client that username is taken.
-            //             let _ = sender
-            //                 .send(Message::Text(String::from("Username already taken.")))
-            //                 .await;
-            //             return;
-            //         }
-            dbg!(name);
-        }
-    }
+    //// Username gets set in the receive loop, if it's valid.
+    //// Loop until a text message is found.
+    //while let Some(Ok(message)) = receiver.next().await {
+    //    //let name_uuid = Uuid::new_v4().simple().to_string();
+    //    // If username that is sent by client is not taken, fill username string.
+    //    check_username(&state, &mut username, &name_uuid);
+    //    let _ = sender.send(Message::Text(String::from("Response"))).await;
+    //    if let Message::Text(_name) = message {
+    //        // let name_uuid = Uuid::new_v4().simple().to_string();
+    //        // If username that is sent by client is not taken, fill username string.
+    //        // check_username(&state, &mut username, &name_uuid);
+    //        // let _ = sender.send(Message::Text(String::from("Response"))).await;
+    //        break;
+    //        // If not empty we want to quit the loop else we want to quit function.
+    //        // if !username.is_empty() {
+    //        //     break;
+    //        // } else {
+    //        //     // Only send our client that username is taken.
+    //        //     let _ = sender
+    //        //         .send(Message::Text(String::from("Username already taken.")))
+    //        //         .await;
+    //        //     return;
+    //        // }
+    //    }
+    //}
 
     // We subscribe *before* sending the "joined" message, so that we will also
     // display it to our client.
 
+    dbg!("h4");
     let mut rx = state.tx.subscribe();
+    dbg!("h5");
 
-    // Now send the "joined" message to all subscribers.
-    // let msg = format!("{} joined.", username);
-    let msg = format!("joined.");
-    tracing::debug!("{}", msg);
-    let _ = state.tx.send(msg);
+    // // Now send the "joined" message to all subscribers.
+    // // let msg = format!("{} joined.", username);
+    // let msg = format!("joined.");
+    // tracing::debug!("{}", msg);
+    // let _ = state.tx.send(msg);
+    let _ = state.tx.send("HERE".to_string());
+    dbg!("h6");
 
     // Spawn the first task that will receive broadcast messages and send text
     // messages over the websocket to our client.
@@ -122,6 +130,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     // Clone things we want to pass (move) to the receiving task.
     let tx = state.tx.clone();
     // let name = username.clone();
+
+    let _ = tx.send(format!("{}", "EEEEEEEEEEEEEEEEE"));
 
     // Spawn a task that takes messages from the websocket, prepends the user
     // name, and sends them to all broadcast subscribers.
@@ -139,11 +149,11 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
         _ = (&mut recv_task) => send_task.abort(),
     };
 
-    // Send "user left" message (similar to "joined" above).
-    // let msg = format!("{} left.", username);
-    let msg = format!("left.");
-    tracing::debug!("{}", msg);
-    let _ = state.tx.send(msg);
+    // // Send "user left" message (similar to "joined" above).
+    // // let msg = format!("{} left.", username);
+    // let msg = format!("left.");
+    // tracing::debug!("{}", msg);
+    // let _ = state.tx.send(msg);
 
     // Remove username from map so new clients can take it again.
     // state.user_set.lock().unwrap().remove(&username);
