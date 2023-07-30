@@ -1,27 +1,24 @@
-use axum::{
-    extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
-        State,
-    },
-    response::{Html, IntoResponse},
-    routing::get,
-    Router,
-};
-use futures::{sink::SinkExt, stream::StreamExt};
-use std::{
-    collections::HashSet,
-    net::SocketAddr,
-    sync::{Arc, Mutex},
-};
+use axum::extract::ws::Message;
+use axum::extract::ws::WebSocket;
+use axum::extract::ws::WebSocketUpgrade;
+use axum::extract::State;
+use axum::response::Html;
+use axum::response::IntoResponse;
+use axum::routing::get;
+use axum::Router;
+use futures::sink::SinkExt;
+use futures::stream::StreamExt;
+use std::collections::HashSet;
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::sync::broadcast;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use uuid::Uuid;
 
-// Our shared state
 struct AppState {
-    // We require unique usernames. This tracks which usernames have been taken.
     user_set: Mutex<HashSet<String>>,
-    // Channel used to send messages to all connected clients.
     tx: broadcast::Sender<String>,
 }
 
@@ -58,7 +55,7 @@ async fn websocket_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    dbg!("hit");
+    //dbg!("hit");
     ws.on_upgrade(|socket| websocket(socket, state))
 }
 
@@ -66,14 +63,14 @@ async fn websocket_handler(
 // connected client / user, for which we will spawn two independent tasks (for
 // receiving / sending chat messages).
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
-    dbg!("h2");
+    // dbg!("h2");
     // By splitting, we can send and receive at the same time.
     let (mut sender, mut receiver) = stream.split();
     let mut username = String::new();
     let name_uuid = Uuid::new_v4().simple().to_string();
-    dbg!(&name_uuid);
+    // dbg!(&name_uuid);
     check_username(&state, &mut username, &name_uuid);
-    dbg!("h3");
+    // dbg!("h3");
 
     //// Username gets set in the receive loop, if it's valid.
     //// Loop until a text message is found.
@@ -104,17 +101,17 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     // We subscribe *before* sending the "joined" message, so that we will also
     // display it to our client.
 
-    dbg!("h4");
+    // dbg!("h4");
     let mut rx = state.tx.subscribe();
-    dbg!("h5");
+    //dbg!("h5");
 
     // // Now send the "joined" message to all subscribers.
     // // let msg = format!("{} joined.", username);
     // let msg = format!("joined.");
     // tracing::debug!("{}", msg);
     // let _ = state.tx.send(msg);
-    let _ = state.tx.send("HERE".to_string());
-    dbg!("h6");
+    //let _ = state.tx.send("HERE".to_string());
+    // dbg!("h6");
 
     // Spawn the first task that will receive broadcast messages and send text
     // messages over the websocket to our client.
@@ -131,7 +128,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let tx = state.tx.clone();
     // let name = username.clone();
 
-    let _ = tx.send(format!("{}", "EEEEEEEEEEEEEEEEE"));
+    // let _ = tx.send(format!("{}", "EEEEEEEEEEEEEEEEE"));
 
     // Spawn a task that takes messages from the websocket, prepends the user
     // name, and sends them to all broadcast subscribers.
