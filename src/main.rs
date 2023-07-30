@@ -55,6 +55,7 @@ async fn websocket_handler(
 }
 
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
+    dbg!("incoming connection");
     let (mut sender, mut receiver) = stream.split();
     let mut username = String::new();
     let name_uuid = Uuid::new_v4().simple().to_string();
