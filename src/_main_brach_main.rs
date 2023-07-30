@@ -1,34 +1,23 @@
-//! Example chat application.
-//!
-//! Run with
-//!
-//! ```not_rust
-//! cargo run -p example-chat
-//! ```
-
+#![allow(unused_imports)]
 use axum::{
-    extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
-        State,
-    },
-    response::{Html, IntoResponse},
+    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::State,
+    response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
+use device_query::{DeviceEvents, DeviceState};
 use futures::{sink::SinkExt, stream::StreamExt};
+use std::fs;
 use std::{
     collections::HashSet,
-    net::SocketAddr,
     sync::{Arc, Mutex},
 };
 use tokio::sync::broadcast;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-// Our shared state
 struct AppState {
-    // We require unique usernames. This tracks which usernames have been taken.
     user_set: Mutex<HashSet<String>>,
-    // Channel used to send messages to all connected clients.
     tx: broadcast::Sender<String>,
 }
 
@@ -42,7 +31,6 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Set up application state for use with with_state().
     let user_set = Mutex::new(HashSet::new());
     let (tx, _rx) = broadcast::channel(100);
 
@@ -53,12 +41,19 @@ async fn main() {
         .route("/websocket", get(websocket_handler))
         .with_state(app_state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
+    tracing::debug!("listening on {}", listener.local_addr().unwrap());
+    axum::serve(listener, app).await.unwrap();
+
+    // let app = Router::new()
+    //     .route("/", get(home_page))
+    //     .route("/ws", get(ws_handler));
+    // axum::Server::bind(&"0.0.0.0:5757".parse().unwrap())
+    //     .serve(app.into_make_service())
+    //     .await
+    //     .unwrap();
 }
 
 async fn websocket_handler(
@@ -160,3 +155,33 @@ async fn index() -> Html<&'static str> {
     Html(std::include_str!("../chat.html"))
 }
 
+// async fn home_page() -> Html<String> {
+//     Html(fs::read_to_string("src/home_page.html").unwrap())
+// }
+
+// async fn ws_handler(ws: WebSocketUpgrade) -> Response {
+//     ws.on_upgrade(handle_socket)
+// }
+
+// async fn handle_socket(mut socket: WebSocket) {
+//     // let device_state = DeviceState::new();
+//     let _ = socket
+//         .send(axum::extract::ws::Message::Text("asdf".to_string()))
+//         .await;
+//     // while let Some(msg) = socket.recv().await {
+//     //     let msg = if let Ok(msg) = msg {
+//     //         // let _ = socket
+//     //         //  .send(axum::extract::ws::Message::Text("asdf".to_string()))
+//     //         // .await;
+//     //         dbg!(&msg);
+//     //         msg
+//     //     } else {
+//     //         dbg!("disconnect");
+//     //         return;
+//     //     };
+//     //     if socket.send(msg).await.is_err() {
+//     //         dbg!("disconnect");
+//     //         return;
+//     //     }
+//     // }
+// }
