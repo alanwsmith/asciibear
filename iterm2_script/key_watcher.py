@@ -2,6 +2,7 @@ import asyncio
 import iterm2
 import websockets
 
+
 async def main(connection):
     async with iterm2.KeystrokeMonitor(connection) as mon:
         async for websocket in websockets.connect("ws://127.0.0.1:5757/ws"):
