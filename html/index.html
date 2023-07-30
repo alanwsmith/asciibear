@@ -154,6 +154,7 @@
           clicking1Index: 0,
           keyboardIndex: 0,
           isTyping: false,
+          looking: "ahead",
         },
         states: {
           keyboardVisual: {
@@ -180,6 +181,7 @@
             states: {
               clicking: {
                 entry: assign({
+                  looking: "down",
                   isTyping: true,
                   keyboardIndex: (context) => {
                     if (context.keyboardIndex === 0) {
@@ -206,6 +208,7 @@
                 entry: assign({
                   clicking1Index: 0,
                   isTyping: false,
+                  looking: "ahead",
                 }),
               },
               not_clickings: {
@@ -352,7 +355,8 @@
           const clicking1 = clickingSounds[state.context.clicking1Index]
           const star1 = stars[state.context.star1Index]
           const star2 = stars[state.context.star2Index]
-          const eyeThing = eyes[state.context.eyeIndex]
+          const eyeThingA = state.context.looking === "ahead" ? eyes[state.context.eyeIndex] : "  "
+          const eyeThingB = state.context.looking === "down" ? eyes[state.context.eyeIndex] : "  "
           const mouthThing = mouths[state.context.mouthIndex]
           const leftLip = leftLips[state.context.leftLip]
           const rightLip = rightLips[state.context.rightLip]
@@ -360,18 +364,18 @@
           if (state.context.isTyping === false) {
             keyboard = keyboards[0]
           }
-          avatar.innerText = `......................
+          avatar.innerText = `
 
         ----------               ----------
       //-  .  .  -\\\\           //-  .  .  -\\
      //-          -\\\\  -----  //-          -\\
     //-             -----------            - \\
     \\-                                     -//
-     \\        //                \\\\         //
-      \\\\      //                \\\\       ///
-        ||        ${eyeThing}         ${eyeThing}         ||
+     \\         //                \\\\        //
+      \\\\       //                \\\\      ///
+        ||        ${eyeThingA}          ${eyeThingA}        ||
         ||                              ||
-        ||\\-                          -/||
+        ||\\-      ${eyeThingB}          ${eyeThingB}      -/||
          |-\\-       /'______'\\       -/-|
           \\\\--     /  --  --  \\     --//
            /\\\\--\\              //--//\\
