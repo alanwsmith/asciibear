@@ -153,6 +153,7 @@
           star2Index: 0,
           clicking1Index: 0,
           keyboardIndex: 0,
+          isTyping: false,
         },
         states: {
           keyboardVisual: {
@@ -178,9 +179,8 @@
             initial: 'not_clicking',
             states: {
               clicking: {
-                on: { STARTTYPING: 'clicking' },
-                on: { STOPTYPING: 'stop_clicking' },
                 entry: assign({
+                  isTyping: true,
                   keyboardIndex: (context) => {
                     if (context.keyboardIndex === 0) {
                       return 1
@@ -196,18 +196,19 @@
                   },
                 }),
                 after: {
-                  251: {
-                    target: 'stop_clicking',
+                  481: {
+                    target: 'not_clicking',
                   },
                 },
               },
-              stop_clicking: {
+              not_clicking: {
+                on: { STARTTYPING: 'clicking' },
                 entry: assign({
                   clicking1Index: 0,
-                  keyboardIndex: 0,
+                  isTyping: false,
                 }),
               },
-              not_clicking: {
+              not_clickings: {
                 on: { STARTTYPING: 'clicking' },
                 // entry: assign(
                 //   {
@@ -354,7 +355,10 @@
           const mouthThing = mouths[state.context.mouthIndex]
           const leftLip = leftLips[state.context.leftLip]
           const rightLip = rightLips[state.context.rightLip]
-          const keyboard = keyboards[state.context.keyboardIndex]
+          let keyboard = keyboards[state.context.keyboardIndex]
+          if (state.context.isTyping === false) {
+            keyboard = keyboards[0]
+          }
           avatar.innerText = `......................
 
 ${star1} ${star2}   ${star1}   ${star2}   ${star1}    ${star2} ${star1}
