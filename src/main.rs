@@ -40,6 +40,7 @@ async fn main() {
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
         .route("/ws", get(websocket_handler))
+        .route("/wskeys", get(websocket_keys_handler))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     tracing::debug!("listening on {}", addr);
@@ -49,7 +50,7 @@ async fn main() {
 }
 
 async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
-    dbg!("incoming connection");
+    dbg!("mic connection");
     let host = cpal::default_host();
     let device = host
         .default_input_device()
@@ -60,16 +61,12 @@ async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
         let mut payload = r#"{"type": "dB", "value": "#.to_string();
         payload.push_str(x.to_string().as_str());
         payload.push_str(r#"}"#);
-        // dbg!(&payload);
         let _ = tx.send(payload);
     };
     let input_stream = device
         .build_input_stream(&config, input_sender, err_fn, None)
         .unwrap();
     let _ = input_stream.play();
-
-    // std::thread::sleep(std::time::Duration::from_secs(60));
-
     loop {}
 }
 
@@ -80,8 +77,54 @@ async fn websocket_handler(
     ws.on_upgrade(|socket| websocket(socket, state))
 }
 
+async fn websocket_keys_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    ws.on_upgrade(|socket| websocket_keys(socket, state))
+}
+
+async fn websocket_keys(stream: WebSocket, state: Arc<AppState>) {
+    dbg!("keys connection");
+    let (mut sender, mut receiver) = stream.split();
+
+    // let mut username = String::new();
+    // let name_uuid = Uuid::new_v4().simple().to_string();
+    // check_username(&state, &mut username, &name_uuid);
+
+    let mut rx = state.tx.subscribe();
+    let tx = state.tx.clone();
+    dbg!(&rx);
+
+    let mut recv_task = tokio::spawn(async move {
+        while let Some(Ok(Message::Text(text))) = receiver.next().await {
+            dbg!(&text);
+            let _ = tx.send(format!("{}", text));
+            //     let _ = tx.send(format!("{}", text));
+        }
+    });
+
+    let mut send_task = tokio::spawn(async move {
+        while let Ok(msg) = rx.recv().await {
+            // In any websocket error, break loop.
+            if sender.send(Message::Text(msg)).await.is_err() {
+                break;
+            }
+        }
+    });
+    // let mut recv_task = tokio::spawn(async move {
+    //     while let Some(Ok(Message::Text(text))) = receiver.next().await {
+    //         let _ = tx.send(format!("{}", text));
+    //     }
+    // });
+    tokio::select! {
+        _ = (&mut send_task) => recv_task.abort(),
+        _ = (&mut recv_task) => send_task.abort(),
+    };
+}
+
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
-    dbg!("incoming connection");
+    dbg!("webpage connection");
     let (mut sender, mut receiver) = stream.split();
     let mut username = String::new();
     let name_uuid = Uuid::new_v4().simple().to_string();
