@@ -14,8 +14,8 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::sync::broadcast;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+//use tracing_subscriber::layer::SubscriberExt;
+// use tracing_subscriber::util::SubscriberInitExt;
 use uuid::Uuid;
 
 struct AppState {
@@ -25,17 +25,19 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "example_chat=trace".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // tracing_subscriber::registry()
+    //     .with(
+    //         tracing_subscriber::EnvFilter::try_from_default_env()
+    //             .unwrap_or_else(|_| "example_chat=trace".into()),
+    //     )
+    //     .with(tracing_subscriber::fmt::layer())
+    //     .init();
+
     let user_set = Mutex::new(HashSet::new());
     let (tx, _rx) = broadcast::channel(100);
     let _handle = tokio::spawn(alfa(tx.clone()));
     let app_state = Arc::new(AppState { user_set, tx });
+
     let app = Router::new()
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
@@ -43,7 +45,7 @@ async fn main() {
         .route("/wskeys", get(websocket_keys_handler))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
-    tracing::debug!("listening on {}", addr);
+    //tracing::debug!("listening on {}", addr);
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
@@ -51,6 +53,7 @@ async fn main() {
 
 async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mic connection");
+
     let host = cpal::default_host();
     let device = host
         .default_input_device()
@@ -67,7 +70,13 @@ async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
         .build_input_stream(&config, input_sender, err_fn, None)
         .unwrap();
     let _ = input_stream.play();
-    loop {}
+
+    // sleep this for a year so the mic input keeps
+    // coming thru. TODO: Find a more precice way
+    // to do this which I'm guessing exists
+    std::thread::sleep(std::time::Duration::from_secs(32536000));
+
+    //
 }
 
 async fn websocket_handler(
