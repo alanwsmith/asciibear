@@ -12,7 +12,7 @@ async def watchit(connection, queue):
     async with iterm2.KeystrokeMonitor(connection) as mon:
         while True:
             thekey = await mon.async_get()
-            pring("got key")
+            print("got key")
             queue.put_nowait("ping")
 
 async def sendit(queue):
@@ -20,7 +20,7 @@ async def sendit(queue):
         while True:
             ping = await queue.get()
             hitit = await websocket.send('{ "type": "key", "value": "HIDDEN_FOR_SECURITY"}')
-            pring("sent key")
+            print("sent key")
 
 iterm2.run_forever(main, True)
 
