@@ -10,29 +10,24 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use device_query::{DeviceEvents, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
-use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::sync::Mutex;
 use tokio::sync::broadcast;
-use uuid::Uuid;
 
 struct AppState {
-    user_set: Mutex<HashSet<String>>,
     tx: broadcast::Sender<String>,
 }
 
 #[tokio::main]
 async fn main() {
-    let user_set = Mutex::new(HashSet::new());
     let (tx, _rx) = broadcast::channel(100);
-    let _handle = tokio::spawn(alfa(tx.clone()));
-    let _keywatcher_handle = tokio::spawn(keywatcher(tx.clone()));
-    let app_state = Arc::new(AppState { user_set, tx });
+    let _mic_listener_handle = tokio::spawn(mic_listener(tx.clone()));
+    let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
+    let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
-        .route("/ws", get(websocket_handler))
+        .route("/ws", get(page_websocket_handler))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     let _ = axum::Server::bind(&addr)
@@ -40,21 +35,19 @@ async fn main() {
         .await;
 }
 
-async fn keywatcher(tx: tokio::sync::broadcast::Sender<String>) {
-    dbg!("key watcher");
+async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
+    dbg!("key_watcher connection");
     let device_state = DeviceState::new();
     let _guard = device_state.on_key_down(move |_| {
         let payload = r#"{"type": "key", "value": "HIDDEN_FOR_SECURITY"}"#.to_string();
-        let _ = tx.clone().send(payload);
+        let _ = tx.send(payload);
     });
-    // sleep this for a year so the mic input keeps
-    // coming thru. TODO: Find a more precice way
-    // to do this which I'm guessing exists
+    // Probably there's a better way to do this
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
-async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
-    dbg!("mic connection");
+async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
+    dbg!("mic_listener connection");
     let host = cpal::default_host();
     let device = host
         .default_input_device()
@@ -71,90 +64,28 @@ async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
         .build_input_stream(&config, input_sender, err_fn, None)
         .unwrap();
     let _ = input_stream.play();
-    // sleep this for a year so the mic input keeps
-    // coming thru. TODO: Find a more precice way
-    // to do this which I'm guessing exists
+    // Probably there's a better way to do this
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
-async fn websocket_handler(
+async fn page_websocket_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| websocket(socket, state))
+    ws.on_upgrade(|socket| page_websocket(socket, state))
 }
 
-// async fn websocket_keys_handler(
-//     ws: WebSocketUpgrade,
-//     State(state): State<Arc<AppState>>,
-// ) -> impl IntoResponse {
-//     ws.on_upgrade(|socket| websocket_keys(socket, state))
-// }
-
-// async fn websocket_keys(stream: WebSocket, state: Arc<AppState>) {
-//     dbg!("keys connection");
-//     let (mut sender, mut receiver) = stream.split();
-//     let mut rx = state.tx.subscribe();
-//     let tx = state.tx.clone();
-//     dbg!(&rx);
-//     let mut recv_task = tokio::spawn(async move {
-//         while let Some(Ok(Message::Text(text))) = receiver.next().await {
-//             dbg!(&text);
-//             let _ = tx.send(format!("{}", text));
-//         }
-//     });
-//     let mut send_task = tokio::spawn(async move {
-//         while let Ok(msg) = rx.recv().await {
-//             // In any websocket error, break loop.
-//             if sender.send(Message::Text(msg)).await.is_err() {
-//                 break;
-//             }
-//         }
-//     });
-//     // let mut recv_task = tokio::spawn(async move {
-//     //     while let Some(Ok(Message::Text(text))) = receiver.next().await {
-//     //         let _ = tx.send(format!("{}", text));
-//     //     }
-//     // });
-//     tokio::select! {
-//         _ = (&mut send_task) => recv_task.abort(),
-//         _ = (&mut recv_task) => send_task.abort(),
-//     };
-// }
-
-async fn websocket(stream: WebSocket, state: Arc<AppState>) {
-    dbg!("webpage connection");
-    let (mut sender, mut receiver) = stream.split();
-    let mut username = String::new();
-    let name_uuid = Uuid::new_v4().simple().to_string();
-    check_username(&state, &mut username, &name_uuid);
+async fn page_websocket(stream: WebSocket, state: Arc<AppState>) {
+    dbg!("page_websocket connection");
+    let (mut sender, mut _receiver) = stream.split();
     let mut rx = state.tx.subscribe();
-    let mut send_task = tokio::spawn(async move {
+    let _send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
-            // In any websocket error, break loop.
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
             }
         }
     });
-    let tx = state.tx.clone();
-    let mut recv_task = tokio::spawn(async move {
-        while let Some(Ok(Message::Text(text))) = receiver.next().await {
-            let _ = tx.send(format!("{}", text));
-        }
-    });
-    tokio::select! {
-        _ = (&mut send_task) => recv_task.abort(),
-        _ = (&mut recv_task) => send_task.abort(),
-    };
-}
-
-fn check_username(state: &AppState, string: &mut String, name: &str) {
-    let mut user_set = state.user_set.lock().unwrap();
-    if !user_set.contains(name) {
-        user_set.insert(name.to_owned());
-        string.push_str(name);
-    }
 }
 
 async fn index() -> Html<&'static str> {
