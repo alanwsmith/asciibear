@@ -197,7 +197,13 @@
             },
           }),
           after: {
-            251: {
+            // todo move this from 30251 to 251
+            // then figure out how to set it up 
+            // so it's not running 100% of the 
+            // time (it's at 30251 for dev to 
+            // slow down the messages in the 
+            // console
+            30251: {
               target: 'keyboardVisual',
             },
           },
@@ -248,6 +254,8 @@
             },
           },
         },
+
+        /*
         star1: {
           initial: 'shine_star1',
           states: {
@@ -268,6 +276,7 @@
             },
           },
         },
+      */
 
         //   star2: {
         //     initial: 'shine_star2',
@@ -321,6 +330,11 @@
           },
         },
 
+
+        // TODO: put blinks back in place
+        // then dev work is done on keypresses
+        /* 
+        
         eyes: {
           initial: 'eyes_opened',
           states: {
@@ -352,6 +366,9 @@
             },
           },
         },
+
+      */
+
       },
 
       predictableActionArguments: true,

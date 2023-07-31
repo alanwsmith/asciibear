@@ -16,7 +16,7 @@ async def watchit(connection, queue):
             queue.put_nowait("ping")
 
 async def sendit(queue):
-    async with websockets.connect("ws://localhost:5757/ws") as websocket:
+    async with websockets.connect("ws://localhost:5757/wskeys") as websocket:
         while True:
             ping = await queue.get()
             hitit = await websocket.send('{ "type": "key", "value": "HIDDEN_FOR_SECURITY"}')
