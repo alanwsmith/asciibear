@@ -7,6 +7,7 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use device_query::{DeviceEvents, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use std::collections::HashSet;
@@ -36,19 +37,33 @@ async fn main() {
     let user_set = Mutex::new(HashSet::new());
     let (tx, _rx) = broadcast::channel(100);
     let _handle = tokio::spawn(alfa(tx.clone()));
+    let _keywatcher_handle = tokio::spawn(keywatcher(tx.clone()));
     let app_state = Arc::new(AppState { user_set, tx });
 
     let app = Router::new()
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
         .route("/ws", get(websocket_handler))
-        .route("/wskeys", get(websocket_keys_handler))
+        // .route("/wskeys", get(websocket_keys_handler))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     //tracing::debug!("listening on {}", addr);
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
+}
+
+async fn keywatcher(tx: tokio::sync::broadcast::Sender<String>) {
+    let device_state = DeviceState::new();
+    let _guard = device_state.on_key_down(move |_| {
+        let payload = r#"{"type": "key", "value": "HIDDEN_FOR_SECURITY"}"#.to_string();
+        let _ = tx.clone().send(payload);
+    });
+
+    // sleep this for a year so the mic input keeps
+    // coming thru. TODO: Find a more precice way
+    // to do this which I'm guessing exists
+    std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
 async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
@@ -97,10 +112,6 @@ async fn websocket_keys(stream: WebSocket, state: Arc<AppState>) {
     dbg!("keys connection");
     let (mut sender, mut receiver) = stream.split();
 
-    // let mut username = String::new();
-    // let name_uuid = Uuid::new_v4().simple().to_string();
-    // check_username(&state, &mut username, &name_uuid);
-
     let mut rx = state.tx.subscribe();
     let tx = state.tx.clone();
     dbg!(&rx);
@@ -109,7 +120,6 @@ async fn websocket_keys(stream: WebSocket, state: Arc<AppState>) {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
             dbg!(&text);
             let _ = tx.send(format!("{}", text));
-            //     let _ = tx.send(format!("{}", text));
         }
     });
 
