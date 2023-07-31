@@ -103,7 +103,6 @@
 
     //    const eyes = ['˚', '˙']
 
-
     let keyboards = [
       `      
         
@@ -310,7 +309,7 @@
             },
             not_talking: {
               on: {STARTTALKING: 'talking'},
-              // on: {STARTTYPING: 'talking'},
+              on: {STARTTYPING: 'talking'},
               entry: assign({
                 mouthIndex: 0,
                 mouth: 0,
@@ -360,11 +359,10 @@
 
     const actor = interpret(machine)
 
-    let ws = new WebSocket('ws://127.0.0.1:5757/ws')
+    let ws = new WebSocket('ws://127.0.0.1:5757/wsb')
     ws.onopen = (event) => {
       console.log('Connected to websocket')
     }
-
 
     ws.onmessage = (event) => {
       const payload = JSON.parse(event.data)
@@ -410,7 +408,6 @@
            /\\\\--\\              //--//\\
           /      \\\\---${mouthThing}---//      \\
      //----        ____________         ----\\\\
-
 
 
 
