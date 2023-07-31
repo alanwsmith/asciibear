@@ -157,6 +157,31 @@
           looking: "ahead",
         },
         states: {
+
+          looking: {
+            initial: 'ahead', 
+            states: {
+              ahead: {
+                on: { STARTTYPING: 'down' },
+                entry: assign({
+                  looking: "ahead",
+                }),
+              },
+              down: {
+                on: { STARTTYPING: 'down' },
+                entry: assign({
+                  looking: "down",
+                }),
+                after: {
+                  581: {
+                    target: 'ahead',
+                  },
+                },
+              }
+            }
+          },
+
+
           keyboardVisual: {
             entry: assign({
               keyboardIndex: (context) => {
@@ -181,7 +206,6 @@
             states: {
               clicking: {
                 entry: assign({
-                  looking: "down",
                   isTyping: true,
                   keyboardIndex: (context) => {
                     if (context.keyboardIndex === 0) {
@@ -208,7 +232,7 @@
                 entry: assign({
                   clicking1Index: 0,
                   isTyping: false,
-                  looking: "ahead",
+                  //looking: "ahead",
                 }),
               },
               not_clickings: {
@@ -327,7 +351,9 @@
             },
           },
         },
+
         predictableActionArguments: true,
+
       })
 
       const actor = interpret(machine)
