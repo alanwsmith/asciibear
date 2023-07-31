@@ -13,7 +13,6 @@ use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::Mutex;
-use tokio::net::unix::pipe::Sender;
 use tokio::sync::broadcast;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -35,14 +34,12 @@ async fn main() {
         .init();
     let user_set = Mutex::new(HashSet::new());
     let (tx, _rx) = broadcast::channel(100);
-    let handle = tokio::spawn(alfa(tx.clone()));
+    let _handle = tokio::spawn(alfa(tx.clone()));
     let app_state = Arc::new(AppState { user_set, tx });
     let app = Router::new()
         .route("/", get(index))
-        // .route("/index2", get(index2))
         .route("/xstate.js", get(xstate))
         .route("/ws", get(websocket_handler))
-        // .route("/wsb", get(websocket_handler2))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     tracing::debug!("listening on {}", addr);
@@ -58,7 +55,7 @@ async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
         .default_input_device()
         .expect("no input device available");
     let config: cpal::StreamConfig = device.default_input_config().unwrap().into();
-    let input_sender = move |data: &[f32], cb: &cpal::InputCallbackInfo| {
+    let input_sender = move |data: &[f32], _cb: &cpal::InputCallbackInfo| {
         let x: f32 = data[0];
         let mut payload = r#"{"type": "dB", "value": "#.to_string();
         payload.push_str(x.to_string().as_str());
@@ -70,7 +67,10 @@ async fn alfa(tx: tokio::sync::broadcast::Sender<String>) {
         .build_input_stream(&config, input_sender, err_fn, None)
         .unwrap();
     let _ = input_stream.play();
-    std::thread::sleep(std::time::Duration::from_secs(60));
+
+    // std::thread::sleep(std::time::Duration::from_secs(60));
+
+    loop {}
 }
 
 async fn websocket_handler(
@@ -79,13 +79,6 @@ async fn websocket_handler(
 ) -> impl IntoResponse {
     ws.on_upgrade(|socket| websocket(socket, state))
 }
-
-// async fn websocket_handler2(
-//     ws: WebSocketUpgrade,
-//     State(state): State<Arc<AppState>>,
-// ) -> impl IntoResponse {
-//     ws.on_upgrade(|socket| websocket_sound(socket, state))
-// }
 
 async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     dbg!("incoming connection");
@@ -114,50 +107,6 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     };
 }
 
-// async fn websocket_sound(stream: WebSocket, state: Arc<AppState>) {
-//     dbg!("incoming connection");
-//     let host = cpal::default_host();
-//     let device = host
-//         .default_input_device()
-//         .expect("no input device available");
-//     let config: cpal::StreamConfig = device.default_input_config().unwrap().into();
-//     let input_sender = move |data: &[f32], cb: &cpal::InputCallbackInfo| {
-//         let x: f32 = data[0];
-//         let mut payload = r#"{"type": "dB", "value": "#.to_string();
-//         payload.push_str(x.to_string().as_str());
-//         payload.push_str(r#"}"#);
-//         dbg!(&payload);
-//     };
-//     let input_stream = device
-//         .build_input_stream(&config, input_sender, err_fn, None)
-//         .unwrap();
-//     // std::thread::sleep(std::time::Duration::from_secs(3));
-//     // let _ = input_stream.play();
-//     let (mut sender, mut receiver) = stream.split();
-//     let mut username = String::new();
-//     let name_uuid = Uuid::new_v4().simple().to_string();
-//     check_username(&state, &mut username, &name_uuid);
-//     let mut rx = state.tx.subscribe();
-//     let mut send_task = tokio::spawn(async move {
-//         while let Ok(msg) = rx.recv().await {
-//             // In any websocket error, break loop.
-//             if sender.send(Message::Text(msg)).await.is_err() {
-//                 break;
-//             }
-//         }
-//     });
-//     let tx = state.tx.clone();
-//     let mut recv_task = tokio::spawn(async move {
-//         while let Some(Ok(Message::Text(text))) = receiver.next().await {
-//             let _ = tx.send(format!("{}", text));
-//         }
-//     });
-//     tokio::select! {
-//         _ = (&mut send_task) => recv_task.abort(),
-//         _ = (&mut recv_task) => send_task.abort(),
-//     };
-// }
-
 fn check_username(state: &AppState, string: &mut String, name: &str) {
     let mut user_set = state.user_set.lock().unwrap();
     if !user_set.contains(name) {
@@ -168,10 +117,6 @@ fn check_username(state: &AppState, string: &mut String, name: &str) {
 
 async fn index() -> Html<&'static str> {
     Html(std::include_str!("../html/index.html"))
-}
-
-async fn index2() -> Html<&'static str> {
-    Html(std::include_str!("../html/index2.html"))
 }
 
 async fn xstate() -> Html<&'static str> {
