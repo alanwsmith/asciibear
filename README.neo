@@ -6,5 +6,27 @@ Using the mic and keyboard to make
 and ASCII character for streaming
 
 
+-- h2
+
+iTerm2 Script
+
+-- notes
+
+- The iTerm2 Script connects to the
+websocket server and sends a signal
+every time a key is pressed. 
+
+- Right now the script makes a new
+web socket connection for every key
+stroke which isn't the greatest 
+approach but it's working 
+
+- There's no other keyboard input. 
+I had one setup that watched for 
+keypresses globally but it ran an
+entire CPU core up to 100% 
+constantly. So, just going with the
+iTerm2 windows which is what I'm in
+most of the time anyway
 
 

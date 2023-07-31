@@ -2,15 +2,29 @@ import asyncio
 import iterm2
 import websockets
 
-
 async def main(connection):
-    async with iterm2.KeystrokeMonitor(connection) as mon:
-        async for websocket in websockets.connect("ws://127.0.0.1:5757/ws"):
-            try:
-                while True:
-                    await mon.async_get()
-                    await websocket.send('{ "type": "key", "value": "HIDDEN_FOR_SECURITY"}')
-            except websockets.ConnectionClosed:
-                continue
+    queue = asyncio.Queue()
+    a = asyncio.create_task(watchit(connection, queue))
+    b = asyncio.create_task(sendit(queue))
 
-iterm2.run_until_complete(main, True)
+async def watchit(connection, queue):
+    async with iterm2.KeystrokeMonitor(connection) as mon:
+        while True:
+            thekey = await mon.async_get()
+            print("got key")
+            queue.put_nowait("ping")
+
+async def sendit(queue):
+    print("connecting")
+    while True:
+        async with websockets.connect("ws://localhost:5757/wskeys") as websocket:
+            while True:
+                try:
+                    ping = await queue.get()
+                    hitit = await websocket.send('{ "type": "key", "value": "HIDDEN_FOR_SECURITY"}')
+                    print("sent key")
+                except:
+                    break
+
+iterm2.run_forever(main, True)
+
