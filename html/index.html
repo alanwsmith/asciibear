@@ -23,6 +23,7 @@
 
   <body>
     <main>
+      <div id="chat"></div>
       <pre id="avatar"></pre>
     </main>
 
@@ -171,9 +172,23 @@
           isTyping: false,
           looking: 'ahead',
           mouseViewIndex: 0,
+          chatPingIndex: 0,
         },
 
         states: {
+          chatPingState: {
+            initial: 'chatPing0',
+            states: {
+              chatPing0: {
+                on: { CHATPING: 'chatPing1' },
+              },
+              chatPing1: {
+                entry: assign({
+                  chatPingIndex: 1,
+                }),
+              },
+            },
+          },
           mousePosition: {
             initial: 'mousePositionStatic',
             states: {
@@ -193,7 +208,7 @@
                   },
                 }),
                 after: {
-                  281: {
+                  201: {
                     target: 'mousePositionStatic',
                   },
                 },
@@ -237,7 +252,6 @@
                   },
                 },
               },
-
             },
           },
 
@@ -455,6 +469,8 @@
           actor.send({ type: 'STARTTYPING' })
         } else if (payload.type === 'mouse') {
           actor.send({ type: 'MOVEMOUSE' })
+        } else if (payload.type === 'chat') {
+          actor.send({ type: 'CHATPING' })
         }
       }
 
@@ -477,6 +493,7 @@
           const rightLip = rightLips[state.context.rightLip]
           let mouseView = mouseViews[state.context.mouseViewIndex]
           let keyboard = keyboards[state.context.keyboardIndex]
+          let chatping = state.context.chatPingIndex
           if (state.context.isTyping === false) {
             keyboard = keyboards[0]
           }
@@ -501,7 +518,7 @@
 
 
 
-
+${chatping}
 ${mouseView}
 ${keyboard}
 `
