@@ -12,7 +12,6 @@
         background-color: #000;
         color: goldenrod;
       }
-
       pre {
         font-size: 1rem;
         line-height: 1.4rem;
@@ -172,23 +171,9 @@
           isTyping: false,
           looking: 'ahead',
           mouseViewIndex: 0,
-          chatPingIndex: 0,
         },
 
         states: {
-          chatPingState: {
-            initial: 'chatPing0',
-            states: {
-              chatPing0: {
-                on: { CHATPING: 'chatPing1' },
-              },
-              chatPing1: {
-                entry: assign({
-                  chatPingIndex: 1,
-                }),
-              },
-            },
-          },
           mousePosition: {
             initial: 'mousePositionStatic',
             states: {
@@ -469,12 +454,16 @@
           actor.send({ type: 'STARTTYPING' })
         } else if (payload.type === 'mouse') {
           actor.send({ type: 'MOVEMOUSE' })
-        } else if (payload.type === 'chat') {
-          actor.send({ type: 'CHATPING' })
-        }else if (payload.type === 'bearcolor') {
+        } else if (payload.type === 'bearbgcolor') {
           console.log(payload.type)
           console.log(payload.value)
-          actor.send({ type: 'CHATPING' })
+          document.body.style.backgroundColor = 
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+        } else if (payload.type === 'bearcolor') {
+          console.log(payload.type)
+          console.log(payload.value)
+          document.body.style.color = 
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
         }
       }
 
@@ -498,7 +487,6 @@
           const rightLip = rightLips[state.context.rightLip]
           let mouseView = mouseViews[state.context.mouseViewIndex]
           let keyboard = keyboards[state.context.keyboardIndex]
-          let chatping = state.context.chatPingIndex
           if (state.context.isTyping === false) {
             keyboard = keyboards[0]
           }
@@ -524,7 +512,7 @@
 
 
 
-${chatping}
+
 ${mouseView}
 ${keyboard}
 `

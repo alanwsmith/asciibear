@@ -118,6 +118,7 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 #[serde(tag = "type", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
     BearColor(Color),
+    BearBgColor(Color),
     None,
 }
 
@@ -138,11 +139,35 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
                     // println!("{}\n{}\n", payload.sender.name, payload.message_text);
-                    let twitch_cmd = read_twitch(payload.message_text.as_str()).unwrap().1;
-                    let j = serde_json::to_string(&twitch_cmd);
-                    dbg!(&j);
-                    // let payload = r#"{"type": "chat", "value": "move"}"#.to_string();
-                    let _ = tx.send(j.unwrap());
+
+                    let _ = match read_twitch(payload.message_text.as_str())
+                        .unwrap()
+                        .1
+                        .unwrap()
+                    {
+                        TwitchCommand::BearColor(c) => {
+                            let tc = TwitchCommand::BearColor(c);
+                            let j = serde_json::to_string(&tc);
+                            let _ = tx.send(j.unwrap());
+                            ()
+                        }
+                        TwitchCommand::BearBgColor(c) => {
+                            let tc = TwitchCommand::BearBgColor(c);
+                            let j = serde_json::to_string(&tc);
+                            let _ = tx.send(j.unwrap());
+                        }
+                        TwitchCommand::None => (),
+                    };
+
+                    // let j = serde_json::to_string(&b);
+                    // dbg!(&j);
+                    // let _ = tx.send(j.unwrap());
+
+                    // let twitch_cmd = read_twitch(payload.message_text.as_str()).unwrap().1;
+                    // let j = serde_json::to_string(&twitch_cmd);
+                    // dbg!(&j);
+                    // // let payload = r#"{"type": "chat", "value": "move"}"#.to_string();
+                    // let _ = tx.send(j.unwrap());
                 }
                 _ => {}
             }
@@ -153,7 +178,7 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 }
 
 fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
-    let (source, cmd) = opt(alt((twitch_bear_color,)))(source)?;
+    let (source, cmd) = opt(alt((twitch_bear_color, twitch_bearbg_color)))(source)?;
     Ok((source, cmd))
 }
 
@@ -161,6 +186,12 @@ fn twitch_bear_color(source: &str) -> IResult<&str, TwitchCommand> {
     let (source, _) = tag("!bear ")(source)?;
     let (source, color) = hex_color(source)?;
     Ok((source, TwitchCommand::BearColor(color)))
+}
+
+fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!bearbg ")(source)?;
+    let (source, color) = hex_color(source)?;
+    Ok((source, TwitchCommand::BearBgColor(color)))
 }
 
 fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
