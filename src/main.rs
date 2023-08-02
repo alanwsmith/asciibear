@@ -23,6 +23,7 @@ async fn main() {
     let (tx, _rx) = broadcast::channel(100);
     let _mic_listener_handle = tokio::spawn(mic_listener(tx.clone()));
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
+    let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         .route("/", get(index))
@@ -42,7 +43,16 @@ async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
         let payload = r#"{"type": "key", "value": "HIDDEN_FOR_SECURITY"}"#.to_string();
         let _ = tx.send(payload);
     });
-    // Probably there's a better way to do this
+    std::thread::sleep(std::time::Duration::from_secs(32536000));
+}
+
+async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
+    dbg!("mouse_watcher connection");
+    let device_state = DeviceState::new();
+    let _guard = device_state.on_mouse_move(move |_| {
+        let payload = r#"{"type": "mouse", "value": "move"}"#.to_string();
+        let _ = tx.send(payload);
+    });
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
@@ -64,7 +74,6 @@ async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
         .build_input_stream(&config, input_sender, err_fn, None)
         .unwrap();
     let _ = input_stream.play();
-    // Probably there's a better way to do this
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
