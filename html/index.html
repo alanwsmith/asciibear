@@ -471,12 +471,17 @@
           actor.send({ type: 'MOVEMOUSE' })
         } else if (payload.type === 'chat') {
           actor.send({ type: 'CHATPING' })
+        }else if (payload.type === 'bearcolor') {
+          console.log(payload.type)
+          console.log(payload.value)
+          actor.send({ type: 'CHATPING' })
         }
       }
 
       actor.subscribe((state) => {
         // console.log(state.value, state.context)
         window.requestAnimationFrame(() => {
+          //console.log(state.context)
           const clicking1 = clickingSounds[state.context.clicking1Index]
           const star1 = stars[state.context.star1Index]
           const star2 = stars[state.context.star2Index]
@@ -497,6 +502,7 @@
           if (state.context.isTyping === false) {
             keyboard = keyboards[0]
           }
+
           avatar.innerText = `
 
          ---------              ---------
@@ -522,7 +528,7 @@ ${chatping}
 ${mouseView}
 ${keyboard}
 `
-          console.log(state.context)
+          
         })
       })
 

@@ -10,6 +10,17 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use device_query::{DeviceEvents, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::bytes::complete::take_while_m_n;
+use nom::combinator::map_res;
+use nom::combinator::opt;
+use nom::sequence::Tuple;
+use nom::IResult;
+use nom::Parser;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_json::Result as SerdeResult;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -103,18 +114,35 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value", rename_all = "lowercase")]
+pub enum TwitchCommand {
+    BearColor(Color),
+    None,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Color {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
 async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
     let config = ClientConfig::default();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
     let join_handle = tokio::spawn(async move {
         while let Some(message) = incoming_messages.recv().await {
-            dbg!(&message);
+            // dbg!(&message);
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    println!("{}\n{}\n", payload.sender.name, payload.message_text);
-                    let payload = r#"{"type": "chat", "value": "move"}"#.to_string();
-                    let _ = tx.send(payload);
+                    // println!("{}\n{}\n", payload.sender.name, payload.message_text);
+                    let twitch_cmd = read_twitch(payload.message_text.as_str()).unwrap().1;
+                    let j = serde_json::to_string(&twitch_cmd);
+                    dbg!(&j);
+                    // let payload = r#"{"type": "chat", "value": "move"}"#.to_string();
+                    let _ = tx.send(j.unwrap());
                 }
                 _ => {}
             }
@@ -122,6 +150,35 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
     });
     client.join("theidofalan".to_owned()).unwrap();
     join_handle.await.unwrap();
+}
+
+fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
+    let (source, cmd) = opt(alt((twitch_bear_color,)))(source)?;
+    Ok((source, cmd))
+}
+
+fn twitch_bear_color(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!bear ")(source)?;
+    let (source, color) = hex_color(source)?;
+    Ok((source, TwitchCommand::BearColor(color)))
+}
+
+fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
+    u8::from_str_radix(input, 16)
+}
+
+fn is_hex_digit(c: char) -> bool {
+    c.is_digit(16)
+}
+
+fn hex_primary(input: &str) -> IResult<&str, u8> {
+    map_res(take_while_m_n(2, 2, is_hex_digit), from_hex).parse(input)
+}
+
+fn hex_color(input: &str) -> IResult<&str, Color> {
+    let (input, _) = tag("#")(input)?;
+    let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
+    Ok((input, Color { red, green, blue }))
 }
 
 async fn index() -> Html<&'static str> {
