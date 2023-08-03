@@ -7,7 +7,8 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use device_query::{DeviceEvents, DeviceState};
+use device_query::mouse_state::MouseState;
+use device_query::{DeviceEvents, DeviceQuery, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use nom::branch::alt;
@@ -56,7 +57,7 @@ async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("key_watcher connection");
     let device_state = DeviceState::new();
     let _guard = device_state.on_key_down(move |_| {
-        let payload = r#"{"type": "key", "value": "HIDDEN_FOR_SECURITY"}"#.to_string();
+        let payload = r#"{"key": "key", "value": "HIDDEN_FOR_SECURITY"}"#.to_string();
         let _ = tx.send(payload);
     });
     std::thread::sleep(std::time::Duration::from_secs(32536000));
@@ -71,7 +72,7 @@ async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
     let config: cpal::StreamConfig = device.default_input_config().unwrap().into();
     let input_sender = move |data: &[f32], _cb: &cpal::InputCallbackInfo| {
         let x: f32 = data[0];
-        let mut payload = r#"{"type": "dB", "value": "#.to_string();
+        let mut payload = r#"{"key": "dB", "value": "#.to_string();
         payload.push_str(x.to_string().as_str());
         payload.push_str(r#"}"#);
         let _ = tx.send(payload);
@@ -103,18 +104,28 @@ async fn page_websocket(stream: WebSocket, state: Arc<AppState>) {
     });
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
+pub enum MouseSend {
+    MouseMove(i32, i32),
+}
+
 async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mouse_watcher connection");
     let device_state = DeviceState::new();
-    let _guard = device_state.on_mouse_move(move |_| {
-        let payload = r#"{"type": "mouse", "value": "move"}"#.to_string();
-        let _ = tx.send(payload);
+    let _guard = device_state.on_mouse_move(move |x| {
+        // dbg!(&x);
+        // let payload = r#"{"key": "mouse", "value": "move"}"#.to_string();
+        let payload = MouseSend::MouseMove(x.0, x.1);
+        let package = serde_json::to_string(&payload).unwrap();
+        //dbg!(&package);
+        let _ = tx.send(package);
     });
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", content = "value", rename_all = "lowercase")]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
     BearColor(Color),
     BearBgColor(Color),
@@ -136,7 +147,7 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    dbg!(&payload);
+                    // dbg!(&payload);
                     if let Some(msg) = read_twitch(payload.message_text.as_str()).unwrap().1 {
                         let shipment = serde_json::to_string(&msg).unwrap();
                         let _ = tx.send(shipment);
