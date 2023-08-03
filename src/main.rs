@@ -144,32 +144,6 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
                 }
                 _ => {}
             }
-
-            // // dbg!(&message);
-            // match message {
-            //     twitch_irc::message::ServerMessage::Privmsg(payload) => {
-            //         // println!("{}\n{}\n", payload.sender.name, payload.message_text);
-            //         let _ = match read_twitch(payload.message_text.as_str())
-            //             .unwrap()
-            //             .1
-            //             .unwrap()
-            //         {
-            //             TwitchCommand::BearColor(c) => {
-            //                 let tc = TwitchCommand::BearColor(c);
-            //                 let j = serde_json::to_string(&tc);
-            //                 let _ = tx.send(j.unwrap());
-            //                 ()
-            //             }
-            //             TwitchCommand::BearBgColor(c) => {
-            //                 let tc = TwitchCommand::BearBgColor(c);
-            //                 let j = serde_json::to_string(&tc);
-            //                 let _ = tx.send(j.unwrap());
-            //             }
-            //             TwitchCommand::None => (),
-            //         };
-            //     }
-            //     _ => {}
-            // }
         }
     });
     client.join("theidofalan".to_owned()).unwrap();
