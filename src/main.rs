@@ -150,6 +150,7 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
                     // dbg!(&payload);
                     if let Some(msg) = read_twitch(payload.message_text.as_str()).unwrap().1 {
                         let shipment = serde_json::to_string(&msg).unwrap();
+                        dbg!(&shipment);
                         let _ = tx.send(shipment);
                     }
                 }

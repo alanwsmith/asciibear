@@ -495,11 +495,12 @@
         mouseYglobal = payload.value[1]
         actor.send({type: 'MOVEMOUSE'})
       } else if (payload.key === 'bearbgcolor') {
+        console.log(payload)
         // console.log(payload.type)
         // console.log(payload.value)
         document.body.style.backgroundColor =
           `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
-      } else if (payload.type === 'bearcolor') {
+      } else if (payload.key === 'bearcolor') {
         // console.log(payload.type)
         // console.log(payload.value)
         document.body.style.color =
@@ -526,9 +527,9 @@
         const leftLip = leftLips[state.context.leftLip]
         const rightLip = rightLips[state.context.rightLip]
         let mouseView = mouseViews[state.context.mouseSlot]
-        console.log(state.context.mouseSlot)
-        console.log(state.context.mouseX)
-        console.log(state.context.mouseY)
+        // console.log(state.context.mouseSlot)
+        // console.log(state.context.mouseX)
+        // console.log(state.context.mouseY)
         let keyboard = keyboards[state.context.keyboardIndex]
         if (state.context.isTyping === false) {
           keyboard = keyboards[0]
