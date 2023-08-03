@@ -40,7 +40,6 @@ async fn main() {
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
-
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         .route("/", get(index))
@@ -135,42 +134,42 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
     let join_handle = tokio::spawn(async move {
         while let Some(message) = incoming_messages.recv().await {
-            // dbg!(&message);
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    // println!("{}\n{}\n", payload.sender.name, payload.message_text);
-
-                    let _ = match read_twitch(payload.message_text.as_str())
-                        .unwrap()
-                        .1
-                        .unwrap()
-                    {
-                        TwitchCommand::BearColor(c) => {
-                            let tc = TwitchCommand::BearColor(c);
-                            let j = serde_json::to_string(&tc);
-                            let _ = tx.send(j.unwrap());
-                            ()
-                        }
-                        TwitchCommand::BearBgColor(c) => {
-                            let tc = TwitchCommand::BearBgColor(c);
-                            let j = serde_json::to_string(&tc);
-                            let _ = tx.send(j.unwrap());
-                        }
-                        TwitchCommand::None => (),
-                    };
-
-                    // let j = serde_json::to_string(&b);
-                    // dbg!(&j);
-                    // let _ = tx.send(j.unwrap());
-
-                    // let twitch_cmd = read_twitch(payload.message_text.as_str()).unwrap().1;
-                    // let j = serde_json::to_string(&twitch_cmd);
-                    // dbg!(&j);
-                    // // let payload = r#"{"type": "chat", "value": "move"}"#.to_string();
-                    // let _ = tx.send(j.unwrap());
+                    dbg!(&payload);
+                    if let Some(msg) = read_twitch(payload.message_text.as_str()).unwrap().1 {
+                        let shipment = serde_json::to_string(&msg).unwrap();
+                        let _ = tx.send(shipment);
+                    }
                 }
                 _ => {}
             }
+
+            // // dbg!(&message);
+            // match message {
+            //     twitch_irc::message::ServerMessage::Privmsg(payload) => {
+            //         // println!("{}\n{}\n", payload.sender.name, payload.message_text);
+            //         let _ = match read_twitch(payload.message_text.as_str())
+            //             .unwrap()
+            //             .1
+            //             .unwrap()
+            //         {
+            //             TwitchCommand::BearColor(c) => {
+            //                 let tc = TwitchCommand::BearColor(c);
+            //                 let j = serde_json::to_string(&tc);
+            //                 let _ = tx.send(j.unwrap());
+            //                 ()
+            //             }
+            //             TwitchCommand::BearBgColor(c) => {
+            //                 let tc = TwitchCommand::BearBgColor(c);
+            //                 let j = serde_json::to_string(&tc);
+            //                 let _ = tx.send(j.unwrap());
+            //             }
+            //             TwitchCommand::None => (),
+            //         };
+            //     }
+            //     _ => {}
+            // }
         }
     });
     client.join("theidofalan".to_owned()).unwrap();
