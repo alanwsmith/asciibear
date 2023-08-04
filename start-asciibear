@@ -1,4 +1,0 @@
-#!/bin/bash
-
-tmux select-pane -T "asciibear"
-asciibear
