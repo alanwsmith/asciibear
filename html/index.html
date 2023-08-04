@@ -24,11 +24,43 @@
 
 <body>
   <main>
+    <div id="chat"></div>
     <pre id="avatar"></pre>
   </main>
 
   <script>
+
+    let mouseXglobal = 0
+    let mouseYglobal = 0
+
     const {assign, createMachine, interpret} = XState
+
+    const mouseViews = [
+      `        /-\\
+        |  .|
+        \---/
+        
+        `
+        ,
+
+      `    /-\\
+    |  .|
+    \---/
+    
+    `,
+
+      `
+
+        /-\\
+        |  .|
+        \---/`,
+
+      `
+
+    /-\\
+    |  .|
+    \---/`,
+    ]
 
     const mouths = [
       ' ---- ',
@@ -103,10 +135,8 @@
 
     //    const eyes = ['˚', '˙']
 
-
     let keyboards = [
-      `      
-        
+      `              
 
       
            
@@ -115,8 +145,7 @@
      |   . . . . . . . . . . . . . . . . . |
      |_____________________________________|`,
 
-      `
-            ------
+      `            ------
           / .  .  \\
           |     . |           ____
            \\     /          /     \\
@@ -125,8 +154,7 @@
      |   . . . . . . . . . .  ---- . . . . |
      |_____________________________________|`,
 
-      `
-                              -----
+      `                              -----
                             / .  .  \\
                             | .     |          
                             \\     /         
@@ -156,9 +184,98 @@
         clicking1Index: 0,
         keyboardIndex: 0,
         isTyping: false,
-        looking: "ahead",
+        looking: 'ahead',
+        mouseViewIndex: 0,
+        mouseX: 0,
+        mouseY: 0,
+        mouseSlot: 0,
       },
+
       states: {
+        mousePosition: {
+          initial: 'mousePositionStatic',
+          states: {
+            mousePositionStatic: {
+              entry: assign(
+                {
+                  mouseSlot: (context) => {
+                    let index = 0
+                    if (context.mouseY < (mouseYglobal + 40)) {
+                      index += 2
+                    }
+                    if (context.mouseX > (mouseXglobal + 32)) {
+                      index += 1
+                    }
+                    return index
+                  },
+                  mouseY: () => {
+                    return mouseYglobal
+                  },
+                  mouseX: () => {
+                    return mouseXglobal
+                  },
+                },
+                {
+                  mouseViewIndex: (context) => {
+                    if (context.mouseViewIndex != 0) {
+                      const nextNum = context.mouseViewIndex + 1
+                      if (nextNum == mouseViews.length) {
+                        return 1
+                      } else {
+                        return nextNum
+                      }
+                    } else {
+                      return 0
+                    }
+                  },
+                },
+              ),
+              after: {
+                201: {
+                  target: 'mousePositionStatic',
+                },
+              },
+            },
+          },
+        },
+        mouseMoving: {
+          initial: 'mouseIsNotMoving',
+          states: {
+            mouseIsNotMoving: {
+              on: {MOVEMOUSE: 'startTheMouse'},
+            },
+
+            startTheMouse: {
+              entry: assign({
+                mouseViewIndex: 1,
+              }),
+              after: {
+                181: {
+                  target: 'mouseIsMoving',
+                },
+              },
+            },
+
+            mouseIsMoving: {
+              on: {MOVEMOUSE: 'mouseIsMoving'},
+              after: {
+                581: {
+                  target: 'stopTheMouse',
+                },
+              },
+            },
+            stopTheMouse: {
+              entry: assign({
+                mouseViewIndex: 0,
+              }),
+              after: {
+                581: {
+                  target: 'mouseIsNotMoving',
+                },
+              },
+            },
+          },
+        },
 
         looking: {
           initial: 'ahead',
@@ -166,23 +283,22 @@
             ahead: {
               on: {STARTTYPING: 'down'},
               entry: assign({
-                looking: "ahead",
+                looking: 'ahead',
               }),
             },
             down: {
               on: {STARTTYPING: 'down'},
               entry: assign({
-                looking: "down",
+                looking: 'down',
               }),
               after: {
                 581: {
                   target: 'ahead',
                 },
               },
-            }
-          }
+            },
+          },
         },
-
 
         keyboardVisual: {
           entry: assign({
@@ -217,7 +333,6 @@
                   } else {
                     return 1
                   }
-                  //return Math.floor(Math.random() * keyboards.length)
                 },
                 clicking1Index: () => {
                   return Math.floor(Math.random() * clickingSounds.length)
@@ -234,17 +349,10 @@
               entry: assign({
                 clicking1Index: 0,
                 isTyping: false,
-                //looking: "ahead",
               }),
             },
             not_clickings: {
               on: {STARTTYPING: 'clicking'},
-              // entry: assign(
-              //   {
-              //     clicking1Index: 0,
-              //     keyboardIndex: 0,
-              //   }
-              // ),
             },
           },
         },
@@ -268,24 +376,6 @@
             },
           },
         },
-
-        //   star2: {
-        //     initial: 'shine_star2',
-        //     states: {
-        //       shine_star2: {
-        //         entry: assign({
-        //           star2Index: () => {
-        //             return Math.floor(Math.random() * stars.length)
-        //           },
-        //         }),
-        //         after: {
-        //           4293: {
-        //             target: 'shine_star2',
-        //           },
-        //         },
-        //       },
-        //     },
-        //   },
 
         mouth: {
           initial: 'not_talking',
@@ -355,7 +445,6 @@
       },
 
       predictableActionArguments: true,
-
     })
 
     const actor = interpret(machine)
@@ -365,34 +454,49 @@
       console.log('Connected to websocket')
     }
 
-
     ws.onmessage = (event) => {
       const payload = JSON.parse(event.data)
-      console.log(payload)
-      if (payload.type === 'dB') {
+      if (payload.key === 'dB') {
         if (payload.value > 0.007) {
           actor.send({type: 'STARTTALKING'})
         }
-      } else if (payload.type === 'key') {
+      } else if (payload.key === 'key') {
         actor.send({type: 'STARTTYPING'})
+      } else if (payload.key === 'mousemove') {
+        mouseXglobal = payload.value[0]
+        mouseYglobal = payload.value[1]
+        actor.send({type: 'MOVEMOUSE'})
+      } else if (payload.key === 'bearbgcolor') {
+        document.body.style.backgroundColor =
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+      } else if (payload.key === 'bearcolor') {
+        document.body.style.color =
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
       }
     }
 
     actor.subscribe((state) => {
-      console.log(state.value, state.context)
       window.requestAnimationFrame(() => {
         const clicking1 = clickingSounds[state.context.clicking1Index]
         const star1 = stars[state.context.star1Index]
         const star2 = stars[state.context.star2Index]
-        const eyeThingA = state.context.looking === "ahead" ? eyes[state.context.eyeIndex] : "  "
-        const eyeThingB = state.context.looking === "down" ? eyes[state.context.eyeIndex] : "  "
+        const eyeThingA =
+          state.context.looking === 'ahead'
+            ? eyes[state.context.eyeIndex]
+            : '  '
+        const eyeThingB =
+          state.context.looking === 'down'
+            ? eyes[state.context.eyeIndex]
+            : '  '
         const mouthThing = mouths[state.context.mouthIndex]
         const leftLip = leftLips[state.context.leftLip]
         const rightLip = rightLips[state.context.rightLip]
+        let mouseView = mouseViews[state.context.mouseSlot]
         let keyboard = keyboards[state.context.keyboardIndex]
         if (state.context.isTyping === false) {
           keyboard = keyboards[0]
         }
+
         avatar.innerText = `
 
          ---------              ---------
@@ -415,10 +519,10 @@
 
 
 
-
+${mouseView}
 ${keyboard}
 `
-        console.log(state.context)
+
       })
     })
 
