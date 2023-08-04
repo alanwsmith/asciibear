@@ -41,7 +41,7 @@
         \---/
         
         `
-        ,
+      ,
 
       `    /-\\
     |  .|
@@ -199,14 +199,18 @@
               entry: assign(
                 {
                   mouseSlot: (context) => {
-                    let index = 0
-                    if (context.mouseY < (mouseYglobal + 40)) {
-                      index += 2
+                    if (context.mouseX !== mouseXglobal) {
+                      let index = 0
+                      if (context.mouseY < (mouseYglobal + 30)) {
+                        index += 2
+                      }
+                      if (context.mouseX > (mouseXglobal + 22)) {
+                        index += 1
+                      }
+                      return index
+                    } else {
+                      return context.mouseSlot
                     }
-                    if (context.mouseX > (mouseXglobal + 32)) {
-                      index += 1
-                    }
-                    return index
                   },
                   mouseY: () => {
                     return mouseYglobal
@@ -215,6 +219,8 @@
                     return mouseXglobal
                   },
                 },
+
+                /*
                 {
                   mouseViewIndex: (context) => {
                     if (context.mouseViewIndex != 0) {
@@ -229,12 +235,19 @@
                     }
                   },
                 },
+                */
+
               ),
+
+
               after: {
                 201: {
                   target: 'mousePositionStatic',
                 },
               },
+
+
+
             },
           },
         },
@@ -265,9 +278,13 @@
               },
             },
             stopTheMouse: {
-              entry: assign({
-                mouseViewIndex: 0,
-              }),
+              /*
+                            entry: assign({
+                              mouseViewIndex: 0,
+                            }),
+              
+                            */
+
               after: {
                 581: {
                   target: 'mouseIsNotMoving',

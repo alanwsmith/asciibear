@@ -2,13 +2,13 @@ use axum::extract::ws::Message;
 use axum::extract::ws::WebSocket;
 use axum::extract::ws::WebSocketUpgrade;
 use axum::extract::State;
-use axum::response::Html;
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use device_query::mouse_state::MouseState;
-use device_query::{DeviceEvents, DeviceQuery, DeviceState};
+use cpal::traits::DeviceTrait;
+use cpal::traits::HostTrait;
+use cpal::traits::StreamTrait;
+use device_query::{DeviceEvents, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use nom::branch::alt;
@@ -21,10 +21,10 @@ use nom::IResult;
 use nom::Parser;
 use serde::Deserialize;
 use serde::Serialize;
-use serde_json::Result as SerdeResult;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
+use tower_http::services::ServeDir;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
@@ -43,8 +43,7 @@ async fn main() {
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
-        .route("/", get(index))
-        .route("/xstate.js", get(xstate))
+        .nest_service("/", ServeDir::new("html"))
         .route("/ws", get(page_websocket_handler))
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
@@ -114,11 +113,8 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mouse_watcher connection");
     let device_state = DeviceState::new();
     let _guard = device_state.on_mouse_move(move |x| {
-        // dbg!(&x);
-        // let payload = r#"{"key": "mouse", "value": "move"}"#.to_string();
         let payload = MouseSend::MouseMove(x.0, x.1);
         let package = serde_json::to_string(&payload).unwrap();
-        //dbg!(&package);
         let _ = tx.send(package);
     });
     std::thread::sleep(std::time::Duration::from_secs(32536000));
@@ -195,14 +191,6 @@ fn hex_color(input: &str) -> IResult<&str, Color> {
     let (input, _) = tag("#")(input)?;
     let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
     Ok((input, Color { red, green, blue }))
-}
-
-async fn index() -> Html<&'static str> {
-    Html(std::include_str!("../html/index.html"))
-}
-
-async fn xstate() -> Html<&'static str> {
-    Html(std::include_str!("../html/xstate.js"))
 }
 
 fn err_fn(err: cpal::StreamError) {
