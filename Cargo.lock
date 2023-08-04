@@ -77,6 +77,7 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
+ "tower-livereload",
  "tracing",
  "tracing-subscriber",
  "twitch-irc",
@@ -1782,6 +1783,20 @@ name = "tower-layer"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c20c8dbed6283a09604c3e69b4b7eeb54e298b8a600d4d5ecb5ad39de609f1d0"
+
+[[package]]
+name = "tower-livereload"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e90e6da0427c5e111e03c764d49c4e970f5a9f6569fe408e5a1cbe257f48388"
+dependencies = [
+ "bytes",
+ "http",
+ "http-body",
+ "pin-project-lite",
+ "tokio",
+ "tower",
+]
 
 [[package]]
 name = "tower-service"

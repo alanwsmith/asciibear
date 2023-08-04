@@ -25,6 +25,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
+use tower_livereload::LiveReloadLayer;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
@@ -45,6 +46,7 @@ async fn main() {
     let app = Router::new()
         .nest_service("/", ServeDir::new("html"))
         .route("/ws", get(page_websocket_handler))
+        .layer(LiveReloadLayer::new())
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     let _ = axum::Server::bind(&addr)
