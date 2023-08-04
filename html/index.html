@@ -469,6 +469,7 @@
     let ws = new WebSocket('ws://127.0.0.1:5757/ws')
     ws.onopen = (event) => {
       console.log('Connected to websocket')
+      console.log(new Date())
     }
 
     ws.onmessage = (event) => {
