@@ -31,6 +31,16 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
+use asciibear::connection::Connection;
+use std::fmt::Display;
+use std::future::Future;
+use tokio::net::TcpListener;
+use tokio::sync::mpsc::UnboundedSender;
+use asciibear::helpers::spawn;
+use asciibear::stream_manager::start;
+
+
+
 struct AppState {
     tx: broadcast::Sender<String>,
 }
@@ -197,4 +207,29 @@ fn hex_color(input: &str) -> IResult<&str, Color> {
 
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
+}
+
+
+
+async fn rtmp_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // let manager_sender = stream_manager::start();
+    let manager_sender = start();
+
+    println!("Listening for connections on port 1935");
+    let listener = TcpListener::bind("0.0.0.0:1935").await?;
+    let mut current_id = 0;
+
+    loop {
+        let (stream, connection_info) = listener.accept().await?;
+
+        let connection = Connection::new(current_id, manager_sender.clone());
+        println!(
+            "Connection {}: Connection received from {}",
+            current_id,
+            connection_info.ip()
+        );
+
+        spawn(connection.start_handshake(stream));
+        current_id = current_id + 1;
+    }
 }
