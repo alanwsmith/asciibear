@@ -24,12 +24,13 @@ use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tower_http::services::ServeDir;
-use tower_livereload::LiveReloadLayer;
+// use tower_http::services::ServeDir;
+// use tower_livereload::LiveReloadLayer;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
+use axum::response::Html;
 
 use asciibear::connection::Connection;
 use std::fmt::Display;
@@ -52,17 +53,30 @@ async fn main() {
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
+    let _rtmp_serve = tokio::spawn(rtmp_server());
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
-        .nest_service("/", ServeDir::new("html"))
+        //.nest_service("/", ServeDir::new("html"))
+        .route("/", get(index))
+        .route("/xstate.js", get(xstate))
         .route("/ws", get(page_websocket_handler))
-        .layer(LiveReloadLayer::new())
+        // .layer(LiveReloadLayer::new())
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
 }
+
+async fn index() -> Html<&'static str> {
+    Html(std::include_str!("../html/index.html"))
+}
+
+
+async fn xstate() -> Html<&'static str> {
+    Html(std::include_str!("../html/xstate.js"))
+}
+
 
 async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("key_watcher connection");
@@ -210,9 +224,9 @@ fn err_fn(err: cpal::StreamError) {
 }
 
 
-
-async fn rtmp_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // let manager_sender = stream_manager::start();
+//async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // let manager_sender = stream_manager::start();
     let manager_sender = start();
 
     println!("Listening for connections on port 1935");
