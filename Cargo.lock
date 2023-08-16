@@ -69,10 +69,12 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "bytes",
+ "clang",
  "cpal",
  "device_query",
  "futures",
  "nom",
+ "opencv",
  "rml_rtmp",
  "serde",
  "serde_json",
@@ -246,12 +248,11 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 
 [[package]]
 name = "cc"
-version = "1.0.81"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c6b2562119bf28c3439f7f02db99faf0aa1a8cdfe5772a2ee155d32227239f0"
+checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
 dependencies = [
  "jobserver",
- "libc",
 ]
 
 [[package]]
@@ -288,6 +289,16 @@ dependencies = [
  "time",
  "wasm-bindgen",
  "winapi",
+]
+
+[[package]]
+name = "clang"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84c044c781163c001b913cd018fc95a628c50d0d2dfea8bca77dad71edb16e37"
+dependencies = [
+ "clang-sys",
+ "libc",
 ]
 
 [[package]]
@@ -452,6 +463,12 @@ dependencies = [
  "block-buffer 0.10.4",
  "crypto-common",
 ]
+
+[[package]]
+name = "dunce"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
 
 [[package]]
 name = "either"
@@ -1148,6 +1165,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "opencv"
+version = "0.84.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a097f79e4a6ec571f5765c5020f7dbe77d22b9b8dde01c647098fcd2be3895c"
+dependencies = [
+ "cc",
+ "dunce",
+ "jobserver",
+ "libc",
+ "num-traits",
+ "once_cell",
+ "opencv-binding-generator",
+ "pkg-config",
+ "semver",
+ "shlex",
+ "vcpkg",
+]
+
+[[package]]
+name = "opencv-binding-generator"
+version = "0.72.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e674c5d4d124421a4980fa8533bafd15e07dec30acca5c1b38c055ba234a2cf"
+dependencies = [
+ "clang",
+ "clang-sys",
+ "dunce",
+ "once_cell",
+ "percent-encoding",
+ "regex",
+]
+
+[[package]]
 name = "openssl"
 version = "0.10.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1513,6 +1563,12 @@ dependencies = [
  "core-foundation-sys 0.8.4",
  "libc",
 ]
+
+[[package]]
+name = "semver"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0293b4b29daaf487284529cc2f5675b8e57c61f70167ba415a463651fd6a918"
 
 [[package]]
 name = "serde"

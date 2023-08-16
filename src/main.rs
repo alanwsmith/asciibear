@@ -31,6 +31,7 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 use axum::response::Html;
+use asciibear::screen_capture::screen_capture;
 
 use asciibear::connection::Connection;
 // use std::fmt::Display;
@@ -53,7 +54,8 @@ async fn main() {
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
-    let _rtmp_serve = tokio::spawn(rtmp_server());
+    let _rtmp_server = tokio::spawn(rtmp_server());
+    // let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         //.nest_service("/", ServeDir::new("html"))

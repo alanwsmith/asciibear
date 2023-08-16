@@ -1,12 +1,43 @@
-fn main() -> Result<()> {
+#![allow(unused_imports)]
+use opencv::core::absdiff;
+use opencv::core::in_range;
+use opencv::core::Point;
+use opencv::core::Rect;
+use opencv::core::VecN;
+use opencv::core::Vector;
+use opencv::imgcodecs::imread;
+use opencv::imgcodecs::imwrite;
+use opencv::imgproc::bounding_rect;
+use opencv::imgproc::cvt_color;
+use opencv::imgproc::find_contours;
+use opencv::imgproc::find_contours_with_hierarchy;
+use opencv::imgproc::rectangle;
+use opencv::imgproc::threshold;
+use opencv::imgproc::CHAIN_APPROX_NONE;
+use opencv::imgproc::CHAIN_APPROX_SIMPLE;
+use opencv::imgproc::COLOR_BGR2GRAY;
+use opencv::imgproc::COLOR_GRAY2BGR;
+use opencv::imgproc::RETR_EXTERNAL;
+use opencv::imgproc::RETR_LIST;
+use opencv::imgproc::RETR_TREE;
+use opencv::imgproc::THRESH_BINARY_INV;
+use opencv::imgproc::THRESH_OTSU;
+use opencv::types::VectorOfPoint;
+use opencv::types::VectorOfVec4i;
+use opencv::types::VectorOfVectorOfPoint;
+use opencv::viz::Color;
+use opencv::{highgui, videoio};
+use opencv::{prelude::*, Result};
+
+pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Result<()> {
     let window = "video capture";
-    highgui::named_window(window, highgui::WINDOW_AUTOSIZE)?;
+    //highgui::named_window(window, highgui::WINDOW_AUTOSIZE)?;
     let mut cam = videoio::VideoCapture::from_file("rtmp://127.0.0.1:1935/a/b", videoio::CAP_ANY)?;
     let opened = videoio::VideoCapture::is_opened(&cam)?;
     if !opened {
         panic!("Unable to open default camera!");
     }
-
+    
     let mut first: Mat = Default::default();
     let mut second: Mat = Default::default();
 
@@ -38,13 +69,7 @@ fn main() -> Result<()> {
             let mut contours: VectorOfVectorOfPoint = Default::default();
 
             let p: Point = Default::default();
-            let _ = find_contours(
-                &tmp,
-                &mut contours,
-                RETR_LIST,
-                CHAIN_APPROX_SIMPLE,
-                p,
-            );
+            let _ = find_contours(&tmp, &mut contours, RETR_LIST, CHAIN_APPROX_SIMPLE, p);
 
             let mut cont_counter = 0.0;
             let mut x: f32 = 0.0;
@@ -60,6 +85,18 @@ fn main() -> Result<()> {
 
             x = x / cont_counter as f32;
             y = y / cont_counter as f32;
+
+            let mut payload = r#"{"key": "screen_position", "x": "#.to_string();
+            let xi = x as u32;
+            let yi = y as u32;
+            let x2 = xi.to_string();
+            let y2 = yi.to_string();
+            payload.push_str(x2.as_str());
+            payload.push_str(r#", "y": ""#);
+            payload.push_str(y2.as_str());
+            payload.push_str(r#"}"#);
+            let _ = tx.send(payload);
+
             dbg!(&x);
             dbg!(&y);
             let mut tcv: VectorOfPoint = Default::default();
@@ -69,7 +106,7 @@ fn main() -> Result<()> {
             let s: VecN<f64, 4> = Default::default();
             let _ = rectangle(&mut tmp, b, s, 30, 0, 0);
 
-            highgui::imshow(window, &tmp)?;
+            //highgui::imshow(window, &tmp)?;
 
             let key = highgui::wait_key(10)?;
             if key > 0 && key != 255 {
