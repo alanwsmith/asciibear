@@ -33,10 +33,10 @@ use twitch_irc::TwitchIRCClient;
 use axum::response::Html;
 
 use asciibear::connection::Connection;
-use std::fmt::Display;
-use std::future::Future;
+// use std::fmt::Display;
+// use std::future::Future;
 use tokio::net::TcpListener;
-use tokio::sync::mpsc::UnboundedSender;
+// use tokio::sync::mpsc::UnboundedSender;
 use asciibear::helpers::spawn;
 use asciibear::stream_manager::start;
 
@@ -224,9 +224,7 @@ fn err_fn(err: cpal::StreamError) {
 }
 
 
-//async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // let manager_sender = stream_manager::start();
     let manager_sender = start();
 
     println!("Listening for connections on port 1935");
