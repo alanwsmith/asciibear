@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII_Cam</title>
+  <script src="xstate.js"></script>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #000;
+      color: goldenrod;
+    }
+
+    pre {
+      font-size: 1rem;
+      line-height: 1.4rem;
+      letter-spacing: 0.2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <pre id="avatar"></pre>
+  </main>
+
+  <script>
+
+    const characters = []
+
+
+
+
+    let mouseXglobal = 0
+    let mouseYglobal = 0
+
+    const {assign, createMachine, interpret} = XState
+
+    const mouseViews = [
+      `        /-\\
+        |  .|
+        \---/
+        
+        `
+      ,
+
+      `    /-\\
+    |  .|
+    \---/
+    
+    `,
+
+      `
+
+        /-\\
+        |  .|
+        \---/`,
+
+      `
+
+    /-\\
+    |  .|
+    \---/`,
+    ]
+
+    const mouths = [
+      ' ---- ',
+      ' ◓◓◓◓ ',
+      ' ◉◉◉◉ ',
+      ' ○○○○ ',
+      ' ◎◎◎◎ ',
+      ' ◬◬◬◬ ',
+      ' △△△△ ',
+      ' ∵∵∵∵ ',
+      ' ∺∺∺∺ ',
+      ' ∻∻∻∻ ',
+      ' ∽∽∽∽ ',
+      ' ⋯⋯⋯⋯ ',
+      ' ∓∓∓∓ ',
+      ' ∴∴∴∴ ',
+      ' ⇌⇌⇌⇌ ',
+      ' ⌘⌘⌘⌘ ',
+      ' ⍹⍹⍹⍹ ',
+      ' ♡♡♡♡ ',
+      ' ♬♬♬♬ ',
+      ' ✔✔✔✔ ',
+      ' ✈✈✈✈ ',
+    ]
+    let eyes = [`∘`, `∙`]
+    eyes = ['·', '·']
+    eyes = ['()', '--']
+    let leftLips = ['-', '<']
+    let rightLips = ['-', '>']
+    let clickingSounds = [
+      '                 ',
+      '    ◊ click ◊    ',
+      '    ◈ click ◈    ',
+      '    ⏣ click ⏣    ',
+      '    ∴ click ∴    ',
+      '    ∵ click ∵    ',
+      '    ⋆ click ⋆    ',
+      '    ⁘ click ⁘    ',
+    ]
+
+    let stars = [
+      '◊',
+      '◈',
+      '╬',
+      '⏣',
+      '⌗',
+      '∗',
+      '∴',
+      '∵',
+      '⊙',
+      '⊚',
+      '⊛',
+      '⋆',
+      '⋇',
+      '⁂',
+      '⁘',
+      '⁙',
+      '⁛',
+      '⁜',
+      '⁎',
+      '✦',
+      '✧',
+      '★',
+      '☆',
+      '✩',
+      '✬',
+    ]
+
+    stars = ['★', '☆']
+
+    // |   o   o   |
+
+    //    const eyes = ['˚', '˙']
+
+    let keyboards = [
+      `              
+
+      
+           
+      /  . . . . . . . . . . . . . . . .  \\
+     /  . . . . . . . . . . . . . . . . .  \\
+     |   . . . . . . . . . . . . . . . . . |
+     |_____________________________________|`,
+
+      `            ------
+          / .  .  \\
+          |     . |           ____
+           \\     /          /     \\
+      /  . . . . . . . . .  |      | . .  \\
+     /  . . . . . . . . . . \\     / . . .  \\
+     |   . . . . . . . . . .  ---- . . . . |
+     |_____________________________________|`,
+
+      `                              -----
+                            / .  .  \\
+                            | .     |          
+                            \\     /         
+      /  . . |     | . . . . . . . . . .  \\
+     /  . . \\     / . . . . . . . . . . .  \\
+     |   . . .---- . . . . . . . . . . . . |
+     |_____________________________________|`,
+    ]
+
+    const get_mouth = () => {
+      return Math.floor(Math.random() * mouths.length)
+    }
+
+    const machine = createMachine({
+      id: 'machine',
+      type: 'parallel',
+      context: {
+        mouthIndex: 0,
+        eyeIndex: 0,
+        leftLip: 0,
+        rightLip: 0,
+        mouth: 0,
+        leftEye: 0,
+        rightEye: 0,
+        star1Index: 0,
+        star2Index: 0,
+        clicking1Index: 0,
+        keyboardIndex: 0,
+        isTyping: false,
+        looking: 'ahead',
+        mouseViewIndex: 0,
+        mouseX: 0,
+        mouseY: 0,
+        mouseSlot: 0,
+      },
+
+      states: {
+        mousePosition: {
+          initial: 'mousePositionStatic',
+          states: {
+            mousePositionStatic: {
+              entry: assign(
+                {
+                  mouseSlot: (context) => {
+                    if (context.mouseX !== mouseXglobal) {
+                      let index = 0
+                      if (context.mouseY < (mouseYglobal + 30)) {
+                        index += 2
+                      }
+                      if (context.mouseX > (mouseXglobal + 22)) {
+                        index += 1
+                      }
+                      return index
+                    } else {
+                      return context.mouseSlot
+                    }
+                  },
+                  mouseY: () => {
+                    return mouseYglobal
+                  },
+                  mouseX: () => {
+                    return mouseXglobal
+                  },
+                },
+
+                /*
+                {
+                  mouseViewIndex: (context) => {
+                    if (context.mouseViewIndex != 0) {
+                      const nextNum = context.mouseViewIndex + 1
+                      if (nextNum == mouseViews.length) {
+                        return 1
+                      } else {
+                        return nextNum
+                      }
+                    } else {
+                      return 0
+                    }
+                  },
+                },
+                */
+
+              ),
+
+
+              after: {
+                201: {
+                  target: 'mousePositionStatic',
+                },
+              },
+
+
+
+            },
+          },
+        },
+        mouseMoving: {
+          initial: 'mouseIsNotMoving',
+          states: {
+            mouseIsNotMoving: {
+              on: {MOVEMOUSE: 'startTheMouse'},
+            },
+
+            startTheMouse: {
+              entry: assign({
+                mouseViewIndex: 1,
+              }),
+              after: {
+                181: {
+                  target: 'mouseIsMoving',
+                },
+              },
+            },
+
+            mouseIsMoving: {
+              on: {MOVEMOUSE: 'mouseIsMoving'},
+              after: {
+                581: {
+                  target: 'stopTheMouse',
+                },
+              },
+            },
+            stopTheMouse: {
+              /*
+                            entry: assign({
+                              mouseViewIndex: 0,
+                            }),
+              
+                            */
+
+              after: {
+                581: {
+                  target: 'mouseIsNotMoving',
+                },
+              },
+            },
+          },
+        },
+
+        looking: {
+          initial: 'ahead',
+          states: {
+            ahead: {
+              on: {STARTTYPING: 'down'},
+              entry: assign({
+                looking: 'ahead',
+              }),
+            },
+            down: {
+              on: {STARTTYPING: 'down'},
+              entry: assign({
+                looking: 'down',
+              }),
+              after: {
+                581: {
+                  target: 'ahead',
+                },
+              },
+            },
+          },
+        },
+
+        keyboardVisual: {
+          entry: assign({
+            keyboardIndex: (context) => {
+              if (context.keyboardIndex === 0) {
+                return 1
+              } else if (context.keyboardIndex === 1) {
+                return 2
+              } else {
+                return 1
+              }
+            },
+          }),
+          after: {
+            251: {
+              target: 'keyboardVisual',
+            },
+          },
+        },
+
+        typing: {
+          initial: 'not_clicking',
+          states: {
+            clicking: {
+              entry: assign({
+                isTyping: true,
+                keyboardIndex: (context) => {
+                  if (context.keyboardIndex === 0) {
+                    return 1
+                  } else if (context.keyboardIndex === 1) {
+                    return 2
+                  } else {
+                    return 1
+                  }
+                },
+                clicking1Index: () => {
+                  return Math.floor(Math.random() * clickingSounds.length)
+                },
+              }),
+              after: {
+                481: {
+                  target: 'not_clicking',
+                },
+              },
+            },
+            not_clicking: {
+              on: {STARTTYPING: 'clicking'},
+              entry: assign({
+                clicking1Index: 0,
+                isTyping: false,
+              }),
+            },
+            not_clickings: {
+              on: {STARTTYPING: 'clicking'},
+            },
+          },
+        },
+        star1: {
+          initial: 'shine_star1',
+          states: {
+            shine_star1: {
+              entry: assign({
+                star1Index: () => {
+                  return Math.floor(Math.random() * stars.length)
+                },
+                star2Index: () => {
+                  return Math.floor(Math.random() * stars.length)
+                },
+              }),
+              after: {
+                3293: {
+                  target: 'shine_star1',
+                },
+              },
+            },
+          },
+        },
+
+        mouth: {
+          initial: 'not_talking',
+          states: {
+            talking: {
+              entry: assign({
+                mouthIndex: () => {
+                  return Math.floor(Math.random() * mouths.length)
+                },
+                mouth: () => {
+                  return Math.floor(Math.random() * mouths.length)
+                },
+                leftLip: 1,
+                rightLip: 1,
+              }),
+
+              after: {
+                93: {
+                  target: 'not_talking',
+                },
+              },
+            },
+            not_talking: {
+              on: {STARTTALKING: 'talking'},
+              // on: {STARTTYPING: 'talking'},
+              entry: assign({
+                mouthIndex: 0,
+                mouth: 0,
+                leftLip: 0,
+                rightLip: 0,
+              }),
+            },
+          },
+        },
+
+        eyes: {
+          initial: 'eyes_opened',
+          states: {
+            eyes_opened: {
+              entry: assign({
+                eyeIndex: 0,
+              }),
+              after: [
+                {
+                  delay: (context, event) => {
+                    return Math.floor(Math.random() * 4500) + 4000
+                  },
+                  target: 'eyes_closed',
+                },
+              ],
+            },
+            eyes_closed: {
+              entry: assign({
+                eyeIndex: 1,
+              }),
+              after: [
+                {
+                  delay: (context, event) => {
+                    return Math.floor(Math.random() * 60) + 185
+                  },
+                  target: 'eyes_opened',
+                },
+              ],
+            },
+          },
+        },
+      },
+
+      predictableActionArguments: true,
+    })
+
+    const actor = interpret(machine)
+
+    let ws = new WebSocket('ws://127.0.0.1:5757/ws')
+    ws.onopen = (event) => {
+      console.log('Connected to websocket')
+      console.log(new Date())
+    }
+
+    ws.onmessage = (event) => {
+      const payload = JSON.parse(event.data)
+      if (payload.key === 'dB') {
+        if (payload.value > 0.007) {
+          actor.send({type: 'STARTTALKING'})
+        }
+      } else if (payload.key === 'key') {
+        actor.send({type: 'STARTTYPING'})
+      } else if (payload.key === 'mousemove') {
+        mouseXglobal = payload.value[0]
+        mouseYglobal = payload.value[1]
+        actor.send({type: 'MOVEMOUSE'})
+      } else if (payload.key === 'bearbgcolor') {
+        document.body.style.backgroundColor =
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+      } else if (payload.key === 'bearcolor') {
+        document.body.style.color =
+          `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+      } else if (payload.key === "screen_position") {
+        console.log(payload)
+        console.log(new Date())
+      }
+    }
+
+    actor.subscribe((state) => {
+      window.requestAnimationFrame(() => {
+        const clicking1 = clickingSounds[state.context.clicking1Index]
+        const star1 = stars[state.context.star1Index]
+        const star2 = stars[state.context.star2Index]
+        const eyeThingA =
+          state.context.looking === 'ahead'
+            ? eyes[state.context.eyeIndex]
+            : '  '
+        const eyeThingB =
+          state.context.looking === 'down'
+            ? eyes[state.context.eyeIndex]
+            : '  '
+        const mouthThing = mouths[state.context.mouthIndex]
+        const leftLip = leftLips[state.context.leftLip]
+        const rightLip = rightLips[state.context.rightLip]
+        let mouseView = mouseViews[state.context.mouseSlot]
+        let keyboard = keyboards[state.context.keyboardIndex]
+        if (state.context.isTyping === false) {
+          keyboard = keyboards[0]
+        }
+
+        avatar.innerText = `
+
+         ---------              ---------
+       //- . . . -\\\\          //- . . . -\\\\
+      //- .       -\\\\  ----  //-       . -\\\\
+     //-            ----------            -\\\\
+     \\-                                    -/
+      \\\\       //                \\\\       //
+       \\\\      //                \\\\      //
+        ||        ${eyeThingA}          ${eyeThingA}        ||
+        ||                              ||
+        ||\\-      ${eyeThingB}          ${eyeThingB}      -/||
+         |-\\-       /'______'\\       -/-|
+          \\\\--     /  --  --  \\     --//
+           /\\\\--\\\\              //--//\\
+          /      \\\\-- ${mouthThing} --//      \\
+     //----         _ ${mouthThing} _          ----\\\\
+                     ________   
+
+
+
+
+${mouseView}
+${keyboard}
+`
+
+      })
+    })
+
+    actor.start()
+    actor.send({type: 'STARTTALKING'})
+  </script>
+</body>
+
+</html>

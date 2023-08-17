@@ -60,10 +60,11 @@ async fn main() {
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
         .route("/test-position.html", get(position))
+        .route("/bears.txt", get(bears))
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
         .with_state(app_state);
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 5858));
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
@@ -79,6 +80,10 @@ async fn xstate() -> Html<&'static str> {
 
 async fn position() -> Html<&'static str> {
     Html(std::include_str!("../html/test-position.html"))
+}
+
+async fn bears() -> Html<&'static str> {
+    Html(std::include_str!("../html/bears.txt"))
 }
 
 async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
