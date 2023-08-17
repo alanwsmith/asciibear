@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Position Test</title>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #330000;
+      color: goldenrod;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <canvas id="theArea" width="640" height="380"></canvas>
+  </main>
+
+  <script>
+    const c = document.getElementById("theArea")
+    const ctx = c.getContext("2d")
+    const xCenter = 40
+    const yCenter = 40
+    const radius = 30
+    const startAngle = 0
+    const endAngle = 2 * Math.PI
+    ctx.beginPath()
+    ctx.arc(xCenter, yCenter, radius, 0, 2 * Math.PI)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
+    ctx.stroke()
+    ctx.closePath()
+
+
+
+    /*
+    ctx.beginPath();
+    ctx.arc(100, 75, 50, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.closePath();
+    */
+
+    /*
+        let c = document.getElementById("theArea");
+        let ctx = c.getContext("2d");
+        let xCenter = 40;
+        let yCenter = 40;
+        let radius = 30;
+        ctx.beginPath();
+        ctx.arc(xCenter, yCenter, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.stroke()
+        ctx.closePath();
+        */
+
+
+    let ws = new WebSocket('ws://127.0.0.1:5757/ws')
+    ws.onopen = (event) => {
+      console.log('Connected to websocket')
+      console.log(new Date())
+    }
+
+    ws.onmessage = (event) => {
+      const payload = JSON.parse(event.data)
+      if (payload.key === "screen_position") {
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.beginPath()
+        ctx.arc(payload.x, payload.y, 30, 0, 2 * Math.PI)
+        ctx.fillStyle = '#ffffff'
+        ctx.fill()
+        ctx.stroke()
+        ctx.closePath()
+        ctx.beginPath()
+        ctx.rect(0, 0, 640, 380)
+        ctx.stroke()
+        ctx.closePath()
+
+
+        console.log(payload)
+      }
+    }
+
+  </script>
+</body>
+
+</html>

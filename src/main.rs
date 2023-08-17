@@ -26,12 +26,12 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 // use tower_http::services::ServeDir;
 // use tower_livereload::LiveReloadLayer;
+use asciibear::screen_capture::screen_capture;
+use axum::response::Html;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-use axum::response::Html;
-use asciibear::screen_capture::screen_capture;
 
 use asciibear::connection::Connection;
 // use std::fmt::Display;
@@ -40,8 +40,6 @@ use tokio::net::TcpListener;
 // use tokio::sync::mpsc::UnboundedSender;
 use asciibear::helpers::spawn;
 use asciibear::stream_manager::start;
-
-
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -61,6 +59,7 @@ async fn main() {
         //.nest_service("/", ServeDir::new("html"))
         .route("/", get(index))
         .route("/xstate.js", get(xstate))
+        .route("/test-position.html", get(position))
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
         .with_state(app_state);
@@ -74,11 +73,13 @@ async fn index() -> Html<&'static str> {
     Html(std::include_str!("../html/index.html"))
 }
 
-
 async fn xstate() -> Html<&'static str> {
     Html(std::include_str!("../html/xstate.js"))
 }
 
+async fn position() -> Html<&'static str> {
+    Html(std::include_str!("../html/test-position.html"))
+}
 
 async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("key_watcher connection");
@@ -224,7 +225,6 @@ fn hex_color(input: &str) -> IResult<&str, Color> {
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
 }
-
 
 async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let manager_sender = start();

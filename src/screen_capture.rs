@@ -31,10 +31,10 @@ use opencv::{prelude::*, Result};
 use tokio::time::Duration;
 use serde_json::json;
 
-pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) {
+pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Result<()> {
 
     let window = "video capture";
-    // //highgui::named_window(window, highgui::WINDOW_AUTOSIZE)?;
+    // highgui::named_window(window, highgui::WINDOW_AUTOSIZE)?;
     let mut cam = videoio::VideoCapture::from_file("rtmp://127.0.0.1:1935/a/b", videoio::CAP_ANY).unwrap();
     // // let mut cam = videoio::VideoCapture::from_file("rtmp://127.0.0.1:1935/a/b", videoio::CAP_ANY)?;
     let opened = videoio::VideoCapture::is_opened(&cam).unwrap();
@@ -66,10 +66,7 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) {
 
     loop {
 
-        
-
-
-
+    
         
         // let payload = r#"{"key": "screen_position", "x": "x"}"#.to_string();
         // let _ = tx.send(payload);
@@ -87,9 +84,9 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) {
 
             let mut lower: Vector<i32> = Default::default();
             let mut upper: Vector<i32> = Default::default();
-            lower.push(254);
-            lower.push(254);
-            lower.push(254);
+            lower.push(253);
+            lower.push(253);
+            lower.push(253);
             upper.push(255);
             upper.push(255);
             upper.push(255);
@@ -138,12 +135,15 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) {
                 "x": xi,
                 "y": yi});
 
+            // if tmp.size()?.width > 0 {
+                // highgui::imshow(window, &tmp)?;
+            // }
 
 
            // let payload = r#"{"key": "screen_position", "x": "x"}"#.to_string();
 
             let _ = tx.send(payload.to_string());
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_millis(70)).await;
 
 
             // let _ = tx.send(payload);
