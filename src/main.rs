@@ -58,9 +58,10 @@ async fn main() {
     let app = Router::new()
         //.nest_service("/", ServeDir::new("html"))
         .route("/", get(index))
+        .route("/script.js", get(scriptjs))
         .route("/xstate.js", get(xstate))
         .route("/test-position.html", get(position))
-        .route("/bears.txt", get(bears))
+        .route("/bears.json", get(bears))
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
         .with_state(app_state);
@@ -74,6 +75,10 @@ async fn index() -> Html<&'static str> {
     Html(std::include_str!("../html/index.html"))
 }
 
+async fn scriptjs() -> Html<&'static str> {
+    Html(std::include_str!("../html/script.js"))
+}
+
 async fn xstate() -> Html<&'static str> {
     Html(std::include_str!("../html/xstate.js"))
 }
@@ -83,7 +88,7 @@ async fn position() -> Html<&'static str> {
 }
 
 async fn bears() -> Html<&'static str> {
-    Html(std::include_str!("../html/bears.txt"))
+    Html(std::include_str!("../html/bears.json"))
 }
 
 async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {

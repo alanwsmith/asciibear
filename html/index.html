@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASCII_Bear</title>
   <script src="xstate.js"></script>
+  <script src="script.js"></script>
   <style>
     body {
       padding: 0;
@@ -21,95 +22,5 @@
     <div id="bear"></div>
   </main>
 
-  <script>
-
-    const theGrid = []
-    const layers = []
-
-    const s = {
-      activeLayers: [false, false, true, false, false, true]
-    }
-
-    const update = () => {
-      layers.forEach((layer, lIndex) => {
-        if (s.activeLayers[lIndex] === true) {
-          // console.log(layer)
-          layer.table.forEach((row, rIndex) => {
-            console.log(row)
-            row.forEach((cell, cIndex) => {
-              // console.log(cell)
-              if (cell.char !== " ") {
-                theGrid[rIndex][cIndex].innerHTML = cell.char
-              }
-            })
-          })
-        }
-      })
-
-      // theGrid[5][9].innerHTML = "x"
-    }
-
-    const make_grid = () => {
-      const newT = document.createElement("table")
-      newT.id = "bearTable"
-      for (let r = 0; r < 30; r++) {
-        const newTr = document.createElement("tr")
-        for (let c = 0; c < 130; c++) {
-          const newTd = document.createElement("td")
-          newTd.innerHTML = ""
-          newTr.appendChild(newTd)
-        }
-        newT.appendChild(newTr)
-      }
-      bear.appendChild(newT)
-
-      const grows = bear.getElementsByTagName("tr")
-      for (let grow = 0; grow < grows.length; grow++) {
-        const newGrow = []
-        gcells = grows[grow].getElementsByTagName("td")
-        for (let gcell = 0; gcell < gcells.length; gcell++) {
-          newGrow.push(gcells[gcell])
-        }
-        theGrid.push(newGrow)
-      }
-
-    }
-
-
-    const init = () => {
-      const req = new Request("bears.txt")
-      fetch(req).then(
-        (response) => {
-          return response.blob()
-        }
-      ).then((response) => {
-        return response.text()
-      }).then((response) => {
-        let frames = response.split("ASCIISHOPLAYER\n")
-        frames.forEach((frame) => {
-          const newFrame = {table: []}
-          const rows = frame.split("\n")
-          rows.forEach((row) => {
-            const newRow = []
-            const chars = row.split("")
-            chars.forEach((char) => {
-              const newChar = {
-                char: char,
-                color: "#ff0000"
-              }
-              newRow.push(newChar)
-            })
-            newFrame.table.push(newRow)
-          })
-          layers.push(newFrame)
-          make_grid()
-          update()
-        })
-      })
-    }
-    document.addEventListener("DOMContentLoaded", init)
-  </script>
-
 </body>
-
 </html>

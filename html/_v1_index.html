@@ -173,6 +173,7 @@
     }
 
     const machine = createMachine({
+      predictableActionArguments: true,
       id: 'machine',
       type: 'parallel',
       context: {
@@ -465,7 +466,7 @@
         },
       },
 
-      predictableActionArguments: true,
+      
     })
 
     const actor = interpret(machine)
