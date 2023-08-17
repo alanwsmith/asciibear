@@ -18,16 +18,59 @@
 
 <body>
   <main>
-    <pre id="bear"></pre>
+    <div id="bear"></div>
   </main>
 
   <script>
 
-    const update = () => {
-      console.log(layers)
+    const theGrid = []
+    const layers = []
+
+    const s = {
+      activeLayers: [false, true, false, false, false]
     }
 
-    const layers = []
+    const update = () => {
+      layers.forEach((layer, lIndex) => {
+        // console.log(layer)
+        layer.table.forEach((row, rIndex) => {
+          console.log(row)
+          row.forEach((cell, cIndex) => {
+            // console.log(cell)
+            theGrid[rIndex][cIndex].innerHTML = cell.char
+          })
+        })
+      })
+
+      // theGrid[5][9].innerHTML = "x"
+    }
+
+    const make_grid = () => {
+      const newT = document.createElement("table")
+      newT.id = "bearTable"
+      for (let r = 0; r < 30; r++) {
+        const newTr = document.createElement("tr")
+        for (let c = 0; c < 130; c++) {
+          const newTd = document.createElement("td")
+          newTd.innerHTML = "."
+          newTr.appendChild(newTd)
+        }
+        newT.appendChild(newTr)
+      }
+      bear.appendChild(newT)
+
+      const grows = bear.getElementsByTagName("tr")
+      for (let grow = 0; grow < grows.length; grow++) {
+        const newGrow = []
+        gcells = grows[grow].getElementsByTagName("td")
+        for (let gcell = 0; gcell < gcells.length; gcell++) {
+          newGrow.push(gcells[gcell])
+        }
+        theGrid.push(newGrow)
+      }
+
+    }
+
 
     const init = () => {
       const req = new Request("bears.txt")
@@ -42,21 +85,22 @@
         frames.forEach((frame) => {
           const newFrame = {table: []}
           const rows = frame.split("\n")
-          const newRow = []
           rows.forEach((row) => {
+            const newRow = []
             const chars = row.split("")
             chars.forEach((char) => {
               const newChar = {
                 char: char,
-                color: "#000000"
+                color: "#ff0000"
               }
               newRow.push(newChar)
             })
-            newFrame.table.push(row)
+            newFrame.table.push(newRow)
           })
           layers.push(newFrame)
+          make_grid()
+          update()
         })
-        update()
       })
     }
     document.addEventListener("DOMContentLoaded", init)
