@@ -27,19 +27,23 @@
     const layers = []
 
     const s = {
-      activeLayers: [false, true, false, false, false]
+      activeLayers: [false, false, true, false, false, true]
     }
 
     const update = () => {
       layers.forEach((layer, lIndex) => {
-        // console.log(layer)
-        layer.table.forEach((row, rIndex) => {
-          console.log(row)
-          row.forEach((cell, cIndex) => {
-            // console.log(cell)
-            theGrid[rIndex][cIndex].innerHTML = cell.char
+        if (s.activeLayers[lIndex] === true) {
+          // console.log(layer)
+          layer.table.forEach((row, rIndex) => {
+            console.log(row)
+            row.forEach((cell, cIndex) => {
+              // console.log(cell)
+              if (cell.char !== " ") {
+                theGrid[rIndex][cIndex].innerHTML = cell.char
+              }
+            })
           })
-        })
+        }
       })
 
       // theGrid[5][9].innerHTML = "x"
@@ -52,7 +56,7 @@
         const newTr = document.createElement("tr")
         for (let c = 0; c < 130; c++) {
           const newTd = document.createElement("td")
-          newTd.innerHTML = "."
+          newTd.innerHTML = ""
           newTr.appendChild(newTd)
         }
         newT.appendChild(newTr)
