@@ -55,7 +55,7 @@ async fn main() {
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
     let _rtmp_server = tokio::spawn(rtmp_server());
-    // let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
+    let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         //.nest_service("/", ServeDir::new("html"))
