@@ -6,11 +6,10 @@ const machine = createMachine({
   type: "parallel",
   context: {
     layers: [],
-    metadata: {},
-    activeLayers:
+    visibleLayers:
       [false, true, false, true, false, true,
-      false, false, false, false, false, false,
-      false, false, false, false, false]
+        false, false, false, false, false, false,
+        false, false, false, false, false],
   },
   states: {
     start: {
@@ -20,8 +19,7 @@ const machine = createMachine({
           target: "gotoit",
           actions: (context, event) => {
             context.layers = event.struct.layers
-            context.metadata = event.struct.metadata
-            console.log(context)
+            //console.log(context)
           }
         }
       }
@@ -36,19 +34,15 @@ const machine = createMachine({
 
 const actor = interpret(machine).start()
 
-
 actor.subscribe((state) => {
   window.requestAnimationFrame(() => {
-    layers.forEach((layer, lIndex) => {
-      if (state.context.activeLayers[lIndex] === true) {
-        // console.log(layer)
-        layer.table.forEach((row, rIndex) => {
-          // console.log(row)
-          row.forEach((cell, cIndex) => {
-            // console.log(cell)
-            if (cell.char !== " ") {
-              theGrid[rIndex][cIndex].innerHTML = cell.char
-            }
+    state.context.layers.forEach((layer, lIndex) => {
+      if (state.context.visibleLayers[lIndex]) {
+        layer.rows.forEach((row, rIndex) => {
+          row.forEach((pixel, pIndex) => {
+             if (theGrid[rIndex][pIndex].innerText === "") {
+              theGrid[rIndex][pIndex].innerText = pixel.char
+             }
           })
         })
       }
@@ -57,18 +51,42 @@ actor.subscribe((state) => {
 })
 
 
+// layers.forEach((layer, lIndex) => {
+//   if (state.context.activeLayers[lIndex] === true) {
+//     // console.log(layer)
+//     layer.table.forEach((row, rIndex) => {
+//       // console.log(row)
+//       row.forEach((cell, cIndex) => {
+//         // console.log(cell)
+//         if (cell.char !== " ") {
+//           theGrid[rIndex][cIndex].innerHTML = cell.char
+//         }
+//       })
+//     })
+//   }
+// })
+
 
 const theGrid = []
 const layers = []
 
+const make_grid = (data) => {
 
+  let rows = 0
+  let cols = 0
 
-const make_grid = () => {
+  for (let l = 0; l < data.layers.length; l++) {
+    rows = Math.max(rows, data.layers[l].rows.length)
+    for (let r = 0; r < data.layers[l].rows.length; r++) {
+      cols = Math.max(cols, data.layers[l].rows[r].length)
+    }
+  }
+
   const newT = document.createElement("table")
   newT.id = "bearTable"
-  for (let r = 0; r < 30; r++) {
+  for (let r = 0; r <= rows; r++) {
     const newTr = document.createElement("tr")
-    for (let c = 0; c < 130; c++) {
+    for (let c = 0; c <= cols; c++) {
       const newTd = document.createElement("td")
       newTd.innerHTML = ""
       newTr.appendChild(newTd)
@@ -85,24 +103,20 @@ const make_grid = () => {
     }
     theGrid.push(newGrow)
   }
+
 }
 
-// async function loadData() {
-//   const response = await fetch("bears.json");
-//   const payload = await response.json();
-//   console.log(payload );
-// }
+
+
 
 const init = () => {
   const req = new Request("bears.json")
   fetch(req).then((response) => {
     return response.json()
   }).then((data) => {
-    // console.log(data)
-     actor.send({type: 'KICKOFF', struct: data})
+    make_grid(data)
+    actor.send({ type: 'KICKOFF', struct: data })
   })
-
-
 
 
 
