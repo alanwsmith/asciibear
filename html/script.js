@@ -4,16 +4,35 @@ const { log } = actions;
 const theGrid = []
 const layers = []
 
-const pickOption = (layerType, layers) => {
-  const options = []
-  layers.forEach((l, lIndex) => {
-    // console.log(l)
-    if (l.layerType === layerType) {
-      options.push(lIndex)
-    }
-  })
-  const randNum = Math.floor(Math.random() * options.length)
-  return options[randNum]
+
+// const pickOption = (layerType, layers) => {
+//   const options = []
+//   layers.forEach((l, lIndex) => {
+//     // console.log(l)
+//     if (l.layerType === layerType) {
+//       options.push(lIndex)
+//     }
+//   })
+//   const randNum = Math.floor(Math.random() * options.length)
+//   return options[randNum]
+// }
+
+const pickOption = (layerType, context) => {
+  const availableItems = []
+   context.layers.forEach((l, lIndex) => {
+     if (l.layerType === layerType) {
+       availableItems.push(lIndex)
+     }
+   })
+  const returnVisible = [...context.visibleLayers]
+  // const randNum = Math.floor(Math.random() * availableItems.length)
+
+  returnVisible[
+    availableItems[Math.floor(Math.random() * availableItems.length)]
+  ] = true
+  // returnVisible[3] = true
+  // debugger
+  return returnVisible 
 }
 
 const machine = createMachine({
@@ -63,44 +82,43 @@ const machine = createMachine({
                   entry: assign(
                     {
                       visibleLayers: (context) => {
-                        const newArray = [...context.visibleLayers]
-                        newArray[5] = false 
-                        newArray[3] = true
-                        return newArray
+                        return pickOption("eyes~forward~open", context)
                       }
                     }
                   ),
 
-                  after: [
-                    {
-                      delay: (context, event) => {
-                        return Math.floor(Math.random() * 4500) + 4000
-                      },
-                      target: 'forwardEyesBlink',
-                    },
-                  ],
+                  // after: [
+                  //   {
+                  //     delay: (context, event) => {
+                  //       return Math.floor(Math.random() * 4500) + 4000
+                  //     },
+                  //     target: 'forwardEyesBlink',
+                  //   },
+                  // ],
 
                 },
-                forwardEyesBlink: {
-                  entry: assign(
-                    {
-                      visibleLayers: (context) => {
-                        const newArray = [...context.visibleLayers]
-                        newArray[3] = false
-                        newArray[5] = true
-                        return newArray
-                      }
-                    }
-                  ),
-                  after: [
-                    {
-                      delay: (context, event) => {
-                        return Math.floor(Math.random() * 60) + 85
-                      },
-                      target: 'forwardEyesOpen',
-                    },
-                  ],
-                }
+
+                // forwardEyesBlink: {
+                //   entry: assign(
+                //     {
+                //       visibleLayers: (context) => {
+                //         const newArray = [...context.visibleLayers]
+                //         newArray[3] = false
+                //         newArray[5] = true
+                //         return newArray
+                //       }
+                //     }
+                //   ),
+                //   after: [
+                //     {
+                //       delay: (context, event) => {
+                //         return Math.floor(Math.random() * 60) + 85
+                //       },
+                //       target: 'forwardEyesOpen',
+                //     },
+                //   ],
+                // }
+
               }
             },
           }
