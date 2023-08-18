@@ -6,7 +6,8 @@ const layers = []
 
 const machine = createMachine({
   predictableActionArguments: true,
-  type: "parallel",
+  // type: "parallel",
+  initial: "starting",
   context: {
     layers: [],
     visibleLayers:
@@ -15,22 +16,40 @@ const machine = createMachine({
         false, false, false, false, false],
   },
   states: {
-    start: {
+    starting: {
       entry: log('started!'),
       on: {
         KICKOFF: {
-          target: "gotoit",
+          target: "testrun",
           actions: (context, event) => {
             context.layers = event.struct.layers
-            //console.log(context)
           }
         }
       }
     },
-    gotoit: {
-      entry: {
-        entry: log('gotoit'),
-      }
+    testrun: {
+      entry: [
+        log('test running'),
+        assign({
+          visibleLayers: (context) => {
+            const mouthStart = 12
+            const mouthEnd = 16
+            const updatedLayers = context.visibleLayers
+            for (let l = mouthStart; l <= mouthEnd; l++) {
+              updatedLayers[l] = false
+            }
+            const newMouth = Math.floor(Math.random() *  mouthEnd) +  mouthStart
+            updatedLayers[newMouth] = true
+            return updatedLayers
+          },
+        })
+
+      ],
+      after: {
+        83: {
+          target: 'testrun',
+        },
+      },
     }
   }
 })
@@ -43,9 +62,9 @@ actor.subscribe((state) => {
       if (state.context.visibleLayers[lIndex]) {
         layer.rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
-             if (pixel.char !== " ") {
+            if (pixel.char !== " ") {
               theGrid[rIndex][pIndex].innerText = pixel.char
-             }
+            }
           })
         })
       }
@@ -72,6 +91,7 @@ const make_grid = (data) => {
     const newTr = document.createElement("tr")
     for (let c = 0; c <= cols; c++) {
       const newTd = document.createElement("td")
+      newTd.classList.add("pixel")
       newTd.innerHTML = ""
       newTr.appendChild(newTd)
     }

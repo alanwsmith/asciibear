@@ -8,11 +8,38 @@
   <script src="xstate.js"></script>
   <script src="script.js"></script>
   <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       padding: 0;
       margin: 0;
       background-color: #000;
       color: goldenrod;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+
+
+    .pixel {
+      font-family: monospace;
+      min-width: 1.1ch;
+      max-width: 1.1ch;
+      height: 1.3rem;
+      padding: 0;
+      border: 0;
+      margin: 0;
+    }
+
+    table {
+      border-collapse: collapse;
     }
   </style>
 </head>
@@ -23,4 +50,5 @@
   </main>
 
 </body>
+
 </html>
