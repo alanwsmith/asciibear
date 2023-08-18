@@ -64,11 +64,42 @@ const machine = createMachine({
                     {
                       visibleLayers: (context) => {
                         const newArray = [...context.visibleLayers]
+                        newArray[5] = false 
                         newArray[3] = true
                         return newArray
                       }
                     }
-                  )
+                  ),
+
+                  after: [
+                    {
+                      delay: (context, event) => {
+                        return Math.floor(Math.random() * 4500) + 4000
+                      },
+                      target: 'forwardEyesBlink',
+                    },
+                  ],
+
+                },
+                forwardEyesBlink: {
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        const newArray = [...context.visibleLayers]
+                        newArray[3] = false
+                        newArray[5] = true
+                        return newArray
+                      }
+                    }
+                  ),
+                  after: [
+                    {
+                      delay: (context, event) => {
+                        return Math.floor(Math.random() * 60) + 85
+                      },
+                      target: 'forwardEyesOpen',
+                    },
+                  ],
                 }
               }
             },
