@@ -1,13 +1,16 @@
 const { assign, createMachine, interpret, actions } = XState
 const { log } = actions;
 
+const theGrid = []
+const layers = []
+
 const machine = createMachine({
   predictableActionArguments: true,
   type: "parallel",
   context: {
     layers: [],
     visibleLayers:
-      [false, true, false, true, false, true,
+      [false, true, true, false, true, false,
         false, false, false, false, false, false,
         false, false, false, false, false],
   },
@@ -40,7 +43,7 @@ actor.subscribe((state) => {
       if (state.context.visibleLayers[lIndex]) {
         layer.rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
-             if (theGrid[rIndex][pIndex].innerText === "") {
+             if (pixel.char !== " ") {
               theGrid[rIndex][pIndex].innerText = pixel.char
              }
           })
@@ -50,25 +53,6 @@ actor.subscribe((state) => {
   })
 })
 
-
-// layers.forEach((layer, lIndex) => {
-//   if (state.context.activeLayers[lIndex] === true) {
-//     // console.log(layer)
-//     layer.table.forEach((row, rIndex) => {
-//       // console.log(row)
-//       row.forEach((cell, cIndex) => {
-//         // console.log(cell)
-//         if (cell.char !== " ") {
-//           theGrid[rIndex][cIndex].innerHTML = cell.char
-//         }
-//       })
-//     })
-//   }
-// })
-
-
-const theGrid = []
-const layers = []
 
 const make_grid = (data) => {
 
@@ -106,9 +90,6 @@ const make_grid = (data) => {
 
 }
 
-
-
-
 const init = () => {
   const req = new Request("bears.json")
   fetch(req).then((response) => {
@@ -117,40 +98,6 @@ const init = () => {
     make_grid(data)
     actor.send({ type: 'KICKOFF', struct: data })
   })
-
-
-
-  // fetch(req).then(
-  //   (response) => {
-  //     return response.blob()
-  //   }
-  // ).then((response) => {
-  //   return response.text()
-  // }).then((response) => {
-  //   let frames = response.split("ASCIISHOPLAYER\n")
-  //   frames.forEach((frame) => {
-  //     const newFrame = {table: []}
-  //     const rows = frame.split("\n")
-  //     rows.forEach((row) => {
-  //       const newRow = []
-  //       const chars = row.split("")
-  //       chars.forEach((char) => {
-  //         const newChar = {
-  //           char: char,
-  //           color: "#ff0000"
-  //         }
-  //         newRow.push(newChar)
-  //       })
-  //       newFrame.table.push(newRow)
-  //     })
-  //     layers.push(newFrame)
-  //   })
-  //   make_grid()
-  //   console.log(1)
-  //   console.log(3)
-  //   actor.send({type: 'KICKOFF', value: 1000, data: "asdf"})
-  // })
-
 }
 
 document.addEventListener("DOMContentLoaded", init)
