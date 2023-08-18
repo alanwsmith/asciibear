@@ -4,25 +4,41 @@ const { log } = actions;
 const theGrid = []
 const layers = []
 
+const pickOption = (layerType, layers) => {
+  const options = []
+  layers.forEach((l, lIndex) => {
+    console.log(l)
+    if (l.layerType === layerType) {
+      options.push(lIndex)
+    }
+  })
+  return options[Math.floor(Math.random() * options.length)]
+}
+
 const machine = createMachine({
   predictableActionArguments: true,
   // type: "parallel",
   initial: "starting",
   context: {
     layers: [],
-    visibleLayers:
-      [false, true, true, false, true, false,
-        false, false, false, false, false, false,
-        false, false, false, false, false],
+    visibleLayers: [],
   },
   states: {
     starting: {
       entry: log('started!'),
       on: {
         KICKOFF: {
-          target: "testrun",
+          // target: "testrun",
           actions: (context, event) => {
             context.layers = event.struct.layers
+            context.layers.forEach((l) => {
+              context.visibleLayers.push(false)
+            })
+
+            const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_open"]
+            items.forEach((item) => {
+              context.visibleLayers[pickOption(item, context.layers)] = true
+            })
           }
         }
       }
@@ -62,7 +78,7 @@ actor.subscribe((state) => {
       if (state.context.visibleLayers[lIndex]) {
         layer.rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
-            if (pixel.char !== " ") {
+            if (pixel.char !== "") {
               theGrid[rIndex][pIndex].innerText = pixel.char
             }
           })
@@ -71,7 +87,6 @@ actor.subscribe((state) => {
     })
   })
 })
-
 
 const make_grid = (data) => {
 
@@ -107,7 +122,6 @@ const make_grid = (data) => {
     }
     theGrid.push(newGrow)
   }
-
 }
 
 const init = () => {
