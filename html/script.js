@@ -18,7 +18,6 @@ const pickOption = (layerType, layers) => {
 
 const machine = createMachine({
   predictableActionArguments: true,
-  // type: "parallel",
   initial: "loading",
   context: {
     layers: [],
@@ -35,44 +34,76 @@ const machine = createMachine({
             context.layers.forEach((l) => {
               context.visibleLayers.push(false)
             })
-            /*
-                        const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_closed"]
-                        items.forEach((item) => {
-                          context.visibleLayers[pickOption(item, context.layers)] = true
-                        })
-                        */
           }
         }
       },
     },
+
     baseline: {
-      entry: [
-        // log('test running'),
-        "loadIt"
-      ],
-      after: {
-        83: {
-          target: 'baseline',
-        },
-      },
+      initial: 'headForward',
+      states: {
+        headForward: {
+          type: 'parallel',
+          states: {
+            headUp: {
+              entry: assign(
+                {
+                  visibleLayers: (context) => {
+                    const newArray = [...context.visibleLayers]
+                    newArray[0] = true
+                    return newArray
+                  }
+                }
+              )
+            },
+            eyes: {
+              initial: 'forwardEyesOpen',
+              states: {
+                forwardEyesOpen: {
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        const newArray = [...context.visibleLayers]
+                        newArray[3] = true
+                        return newArray
+                      }
+                    }
+                  )
+                }
+              }
+            },
+          }
+        }
+      }
+
+      // entry: ["loadIt"],
+      // after: {
+      //   83: {
+      //     target: 'baseline',
+      //   },
+      // },
+
     }
+
   }
 },
 
-  {
-    actions: {
-      loadIt: (context, event) => {
-        // console.log("asdf")
-        const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_open", "keyboard_typing"]
-        context.visibleLayers.forEach((l, lIndex) => {
-          context.visibleLayers[lIndex] = false
-        })
-        items.forEach((item) => {
-          context.visibleLayers[pickOption(item, context.layers)] = true
-        })
-      }
-    }
-  }
+
+  // {
+  //   actions: {
+  //     loadIt: (context, event) => {
+  //       // console.log("asdf")
+  //       const items = ["forward_head", "down_snout", "down_eyes_open", "down_mouth_open", "keyboard_typing"]
+  //       context.visibleLayers.forEach((l, lIndex) => {
+  //         context.visibleLayers[lIndex] = false
+  //       })
+  //       items.forEach((item) => {
+  //         context.visibleLayers[pickOption(item, context.layers)] = true
+  //       })
+  //     }
+  //   }
+  // }
+
 )
 
 const actor = interpret(machine).start()
