@@ -7,73 +7,87 @@ const layers = []
 const pickOption = (layerType, layers) => {
   const options = []
   layers.forEach((l, lIndex) => {
-    console.log(l)
+    // console.log(l)
     if (l.layerType === layerType) {
       options.push(lIndex)
     }
   })
-  return options[Math.floor(Math.random() * options.length)]
+  const randNum = Math.floor(Math.random() * options.length)
+  return options[randNum]
 }
 
 const machine = createMachine({
   predictableActionArguments: true,
   // type: "parallel",
-  initial: "starting",
+  initial: "loading",
   context: {
     layers: [],
     visibleLayers: [],
   },
   states: {
-    starting: {
+    loading: {
       entry: log('started!'),
       on: {
         KICKOFF: {
-          // target: "testrun",
+          target: "baseline",
           actions: (context, event) => {
             context.layers = event.struct.layers
             context.layers.forEach((l) => {
               context.visibleLayers.push(false)
             })
-
-            const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_open"]
-            items.forEach((item) => {
-              context.visibleLayers[pickOption(item, context.layers)] = true
-            })
+            /*
+                        const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_closed"]
+                        items.forEach((item) => {
+                          context.visibleLayers[pickOption(item, context.layers)] = true
+                        })
+                        */
           }
         }
-      }
+      },
     },
-    testrun: {
+    baseline: {
       entry: [
-        log('test running'),
-        assign({
-          visibleLayers: (context) => {
-            const mouthStart = 12
-            const mouthEnd = 16
-            const updatedLayers = context.visibleLayers
-            for (let l = mouthStart; l <= mouthEnd; l++) {
-              updatedLayers[l] = false
-            }
-            const newMouth = Math.floor(Math.random() *  mouthEnd) +  mouthStart
-            updatedLayers[newMouth] = true
-            return updatedLayers
-          },
-        })
-
+        // log('test running'),
+        "loadIt"
       ],
       after: {
         83: {
-          target: 'testrun',
+          target: 'baseline',
         },
       },
     }
   }
-})
+},
+
+  {
+    actions: {
+      loadIt: (context, event) => {
+        // console.log("asdf")
+        const items = ["forward_head", "forward_snout", "forward_eyes_open", "forward_mouth_open", "keyboard_typing"]
+        context.visibleLayers.forEach((l, lIndex) => {
+          context.visibleLayers[lIndex] = false
+        })
+        items.forEach((item) => {
+          context.visibleLayers[pickOption(item, context.layers)] = true
+        })
+      }
+    }
+  }
+)
 
 const actor = interpret(machine).start()
 
 actor.subscribe((state) => {
   window.requestAnimationFrame(() => {
+    state.context.layers.forEach((layer, lIndex) => {
+      layer.rows.forEach((row, rIndex) => {
+        row.forEach((pixel, pIndex) => {
+          theGrid[rIndex][pIndex].innerText = " "
+        })
+      })
+    })
+
+
     state.context.layers.forEach((layer, lIndex) => {
       if (state.context.visibleLayers[lIndex]) {
         layer.rows.forEach((row, rIndex) => {
