@@ -4,6 +4,21 @@ const { log } = actions;
 const theGrid = []
 const layers = []
 
+let ws = new WebSocket('ws://127.0.0.1:5858/ws')
+
+ws.onopen = (event) => {
+  console.log('Connected to websocket')
+  console.log(new Date())
+}
+
+ws.onmessage = (event) => {
+  const payload = JSON.parse(event.data)
+  if (payload.key === 'key') {
+    actor.send({ type: 'STARTTYPING' })
+  }
+}
+
+
 const pickOption = (layerType, context) => {
   const returnVisible = [...context.visibleLayers]
   const parts = layerType.split("~")
@@ -51,6 +66,38 @@ const machine = createMachine({
         headForward: {
           type: 'parallel',
           states: {
+
+            snout: {
+              initial: 'snoutUp',
+              states: {
+                snoutUp: {
+                  on: { STARTTYPING: 'snoutDown' },
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        return pickOption("snout~forward~up", context)
+                      }
+                    }
+                  ),
+                },
+                snoutDown: {
+                  on: { STARTTYPING: 'snoutDown' },
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        return pickOption("snout~forward~down", context)
+                      }
+                    }
+                  ),
+                  after: {
+                    481: {
+                      target: 'snoutUp',
+                    },
+                  },
+                }
+              }
+            },
+
             headUp: {
               entry: assign(
                 {
@@ -64,6 +111,7 @@ const machine = createMachine({
               initial: 'forwardEyesOpen',
               states: {
                 forwardEyesOpen: {
+                  on: { STARTTYPING: 'eyesDownOpen' },
                   entry: assign(
                     {
                       visibleLayers: (context) => {
@@ -77,13 +125,14 @@ const machine = createMachine({
                       delay: (context, event) => {
                         return Math.floor(Math.random() * 4500) + 4000
                       },
-                      target: 'forwardEyesBlink',
+                      target: 'eyesDownOpen',
                     },
                   ],
 
                 },
 
                 forwardEyesBlink: {
+                  on: { STARTTYPING: 'eyesDownOpen' },
                   entry: assign(
                     {
                       visibleLayers: (context) => {
@@ -99,6 +148,23 @@ const machine = createMachine({
                       target: 'forwardEyesOpen',
                     },
                   ],
+                },
+
+                eyesDownOpen: {
+                  on: { STARTTYPING: 'eyesDownOpen' },
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        return pickOption("eyes~down~open", context)
+                      }
+                    }
+                  ),
+                  after: {
+                    481: {
+                      target: 'forwardEyesOpen',
+                    },
+                  },
+
                 }
 
               }
