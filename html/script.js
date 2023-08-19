@@ -17,10 +17,10 @@ ws.onmessage = (event) => {
     if (payload.value > 0.007) {
       actor.send({ type: 'STARTTALKING' })
     }
+  }
     else if (payload.key === 'key') {
       actor.send({ type: 'STARTTYPING' })
     }
-  }
 }
 
 
@@ -143,10 +143,7 @@ const machine = createMachine({
                           target: 'mouthClosed',
                         },
                       },
-
-
                     }
-
                   }
 
                 },
@@ -252,34 +249,9 @@ const machine = createMachine({
           }
         }
       }
-
-      // entry: ["loadIt"],
-      // after: {
-      //   83: {
-      //     target: 'baseline',
-      //   },
-      // },
-
     }
-
   }
 },
-
-
-  // {
-  //   actions: {
-  //     loadIt: (context, event) => {
-  //       // console.log("asdf")
-  //       const items = ["forward_head", "down_snout", "down_eyes_open", "down_mouth_open", "keyboard_typing"]
-  //       context.visibleLayers.forEach((l, lIndex) => {
-  //         context.visibleLayers[lIndex] = false
-  //       })
-  //       items.forEach((item) => {
-  //         context.visibleLayers[pickOption(item, context.layers)] = true
-  //       })
-  //     }
-  //   }
-  // }
 
 )
 
