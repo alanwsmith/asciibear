@@ -13,8 +13,13 @@ ws.onopen = (event) => {
 
 ws.onmessage = (event) => {
   const payload = JSON.parse(event.data)
-  if (payload.key === 'key') {
-    actor.send({ type: 'STARTTYPING' })
+  if (payload.key === 'dB') {
+    if (payload.value > 0.007) {
+      actor.send({ type: 'STARTTALKING' })
+    }
+    else if (payload.key === 'key') {
+      actor.send({ type: 'STARTTYPING' })
+    }
   }
 }
 
@@ -79,7 +84,7 @@ const machine = createMachine({
                       }
                     }
                   ),
-                }, 
+                },
                 isTyping: {
                   on: { STARTTYPING: 'isTyping' },
                   entry: assign(
@@ -98,7 +103,6 @@ const machine = createMachine({
               }
             },
 
-
             snout: {
               initial: 'snoutUp',
               states: {
@@ -111,6 +115,40 @@ const machine = createMachine({
                       }
                     }
                   ),
+
+                  initial: 'mouthClosed',
+                  states: {
+                    mouthClosed: {
+                      on: { STARTTALKING: 'mouthMoving' },
+                      entry: assign(
+                        {
+                          visibleLayers: (context) => {
+                            return pickOption("mouth~forward~closed", context)
+                          }
+                        }
+                      ),
+                    },
+                    mouthMoving: {
+                      on: { STARTTALKING: 'mouthMoving' },
+                      entry: assign(
+                        {
+                          visibleLayers: (context) => {
+                            return pickOption("mouth~forward~open", context)
+                          }
+                        }
+                      ),
+
+                      after: {
+                        81: {
+                          target: 'mouthClosed',
+                        },
+                      },
+
+
+                    }
+
+                  }
+
                 },
                 snoutDown: {
                   on: { STARTTYPING: 'snoutDown' },
@@ -126,6 +164,18 @@ const machine = createMachine({
                       target: 'snoutUp',
                     },
                   },
+                  initial: 'mouthClosed',
+                  states: {
+                    mouthClosed: {
+                      entry: assign(
+                        {
+                          visibleLayers: (context) => {
+                            return pickOption("mouth~down~closed", context)
+                          }
+                        }
+                      ),
+                    }
+                  }
                 }
               }
             },
