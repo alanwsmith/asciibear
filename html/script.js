@@ -18,9 +18,9 @@ ws.onmessage = (event) => {
       actor.send({ type: 'STARTTALKING' })
     }
   }
-    else if (payload.key === 'key') {
-      actor.send({ type: 'STARTTYPING' })
-    }
+  else if (payload.key === 'key') {
+    actor.send({ type: 'STARTTYPING' })
+  }
 }
 
 
@@ -137,7 +137,6 @@ const machine = createMachine({
                           }
                         }
                       ),
-
                       after: {
                         81: {
                           target: 'mouthClosed',
@@ -164,6 +163,7 @@ const machine = createMachine({
                   initial: 'mouthClosed',
                   states: {
                     mouthClosed: {
+                      on: { STARTTALKING: 'mouthMoving' },
                       entry: assign(
                         {
                           visibleLayers: (context) => {
@@ -171,6 +171,21 @@ const machine = createMachine({
                           }
                         }
                       ),
+                    },
+                    mouthMoving: {
+                      on: { STARTTALKING: 'mouthMoving' },
+                      entry: assign(
+                        {
+                          visibleLayers: (context) => {
+                            return pickOption("mouth~down~open", context)
+                          }
+                        }
+                      ),
+                      after: {
+                        81: {
+                          target: 'mouthClosed',
+                        },
+                      },
                     }
                   }
                 }
