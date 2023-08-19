@@ -108,9 +108,9 @@ const machine = createMachine({
               )
             },
             eyes: {
-              initial: 'forwardEyesOpen',
+              initial: 'eyesForwardOpen',
               states: {
-                forwardEyesOpen: {
+                eyesForwardOpen: {
                   on: { STARTTYPING: 'eyesDownOpen' },
                   entry: assign(
                     {
@@ -125,13 +125,13 @@ const machine = createMachine({
                       delay: (context, event) => {
                         return Math.floor(Math.random() * 4500) + 4000
                       },
-                      target: 'eyesDownOpen',
+                      target: 'eyesForwardBlink',
                     },
                   ],
 
                 },
 
-                forwardEyesBlink: {
+                eyesForwardBlink: {
                   on: { STARTTYPING: 'eyesDownOpen' },
                   entry: assign(
                     {
@@ -145,7 +145,7 @@ const machine = createMachine({
                       delay: (context, event) => {
                         return Math.floor(Math.random() * 60) + 85
                       },
-                      target: 'forwardEyesOpen',
+                      target: 'eyesForwardOpen',
                     },
                   ],
                 },
@@ -160,13 +160,11 @@ const machine = createMachine({
                     }
                   ),
                   after: {
-                    481: {
-                      target: 'forwardEyesOpen',
+                    581: {
+                      target: 'eyesForwardOpen',
                     },
                   },
-
                 }
-
               }
             },
           }
