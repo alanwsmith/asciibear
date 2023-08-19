@@ -67,6 +67,38 @@ const machine = createMachine({
           type: 'parallel',
           states: {
 
+            keyboard: {
+              initial: 'notTyping',
+              states: {
+                notTyping: {
+                  on: { STARTTYPING: 'isTyping' },
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        return pickOption("keyboard~forward~base", context)
+                      }
+                    }
+                  ),
+                }, 
+                isTyping: {
+                  on: { STARTTYPING: 'isTyping' },
+                  entry: assign(
+                    {
+                      visibleLayers: (context) => {
+                        return pickOption("keyboard~forward~typing", context)
+                      }
+                    }
+                  ),
+                  after: {
+                    581: {
+                      target: 'notTyping',
+                    },
+                  },
+                }
+              }
+            },
+
+
             snout: {
               initial: 'snoutUp',
               states: {
