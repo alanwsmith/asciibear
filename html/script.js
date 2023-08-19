@@ -90,7 +90,7 @@ const machine = createMachine({
                     }
                   ),
                   after: {
-                    481: {
+                    581: {
                       target: 'snoutUp',
                     },
                   },
