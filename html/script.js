@@ -287,26 +287,24 @@ const actor = interpret(machine).start()
 
 actor.subscribe((state) => {
   window.requestAnimationFrame(() => {
-    state.context.layers.forEach((layer, lIndex) => {
-      layer.rows.forEach((row, rIndex) => {
+    if (state.context.layers[0]) {
+      state.context.layers[0].rows.forEach((row, rIndex) => {
         row.forEach((pixel, pIndex) => {
           theGrid[rIndex][pIndex].innerText = " "
         })
       })
-    })
-
-
-    state.context.layers.forEach((layer, lIndex) => {
-      if (state.context.visibleLayers[lIndex]) {
-        layer.rows.forEach((row, rIndex) => {
-          row.forEach((pixel, pIndex) => {
-            if (pixel.char !== "") {
-              theGrid[rIndex][pIndex].innerText = pixel.char
-            }
+      state.context.layers.forEach((layer, lIndex) => {
+        if (state.context.visibleLayers[lIndex]) {
+          layer.rows.forEach((row, rIndex) => {
+            row.forEach((pixel, pIndex) => {
+              if (pixel.char !== "") {
+                theGrid[rIndex][pIndex].innerText = pixel.char
+              }
+            })
           })
-        })
-      }
-    })
+        }
+      })
+    }
   })
 })
 
