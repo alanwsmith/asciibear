@@ -104,9 +104,9 @@ const machine = createMachine({
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
-                  countdown_head: (context) => {
+                  countdown_pointing: (context) => {
                     if (context.countdown_pointing === 0) {
-                      return 18
+                      return 8
                     } else {
                       return context.countdown_pointing - 1
                     }
@@ -152,8 +152,11 @@ const machine = createMachine({
                   pointing: (context) => {
                     // const newLayers = [...context.visibleLayers]
                     if (context.countdown_pointing === 0) {
-                      return 'looking'
-                    } 
+                      return ["looking", "forward"][Math.floor(Math.random() * 2)]
+                      // return "forward"
+                    } else {
+                      return context.pointing
+                    }
                     // if (context.pointing === "looking") {
                     //   newLayers.push(3)
                     // } else {
@@ -182,7 +185,11 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    newLayers.push(0)
+                    if (context.pointing === "looking") {
+                      newLayers.push(3)
+                    } else {
+                      newLayers.push(0)
+                    }
                     return newLayers
                   },
                 }),
@@ -240,6 +247,8 @@ const actor = interpret(machine).start()
 actor.subscribe((state) => {
   if (state.context.trigger) {
     window.requestAnimationFrame(() => {
+      console.log(state.context.countdown_pointing)
+      console.log(state.context.pointing)
       console.log(state.context.visibleLayers)
       if (state.context.layers[0]) {
         state.context.layers[0].rows.forEach((row, rIndex) => {
