@@ -59,7 +59,9 @@ const machine = createMachine({
               on: { STARTTYPING: { target: ['typingOn'] } },
               entry: [
                 assign({
-                  typingOn: () => { return false },
+                  typingOn: () => {
+                    return false
+                  },
                 }),
               ],
             },
@@ -67,12 +69,16 @@ const machine = createMachine({
               on: { STARTTYPING: { target: ['typingOn'] } },
               entry: [
                 assign({
-                  typingOn: () => { return true },
+                  typingOn: () => {
+                    return true
+                  },
                 }),
               ],
               after: [
                 {
-                  delay: () => {return 380 },
+                  delay: () => {
+                    return 380
+                  },
                   target: 'typingOff',
                 },
               ],
@@ -89,7 +95,7 @@ const machine = createMachine({
                 assign({
                   countdown_eyes: (ctx) => {
                     if (ctx.countdown_eyes === 0) {
-                      return 30
+                      return 10
                     } else {
                       return ctx.countdown_eyes - 1
                     }
@@ -159,12 +165,12 @@ const machine = createMachine({
             delay: {
               entry: [
                 // log((ctx, e) => `VL: ${ctx.typingOn}`),
-                assign({ trigger: true })
+                assign({ trigger: true }),
               ],
               after: [
                 {
                   delay: () => {
-                    return Math.floor(Math.random() * 380) + 360
+                    return Math.floor(Math.random() * 180) + 160
                   },
                   target: 'eyes_countdown',
                 },
@@ -179,36 +185,46 @@ const machine = createMachine({
 
 const actor = interpret(machine).start()
 
-
 actor.subscribe((state) => {
   if (state.context.trigger) {
-  window.requestAnimationFrame(() => {
-    console.log(state.context.visibleLayers)
-//     if (state.context.layers[0]) {
-//       state.context.layers[0].rows.forEach((row, rIndex) => {
-//         row.forEach((pixel, pIndex) => {
-//           theGrid[rIndex][pIndex].innerText = ' '
-//         })
-//       })
+    window.requestAnimationFrame(() => {
+      console.log(state.context.visibleLayers)
+      if (state.context.layers[0]) {
+        state.context.layers[0].rows.forEach((row, rIndex) => {
+          row.forEach((pixel, pIndex) => {
+            theGrid[rIndex][pIndex].innerText = ' '
+          })
+        })
+        state.context.layers.forEach((layer, lIndex) => {
+          if (state.context.visibleLayers.includes(lIndex)) {
+            layer.rows.forEach((row, rIndex) => {
+              row.forEach((pixel, pIndex) => {
+                if (pixel.char !== '') {
+                  theGrid[rIndex][pIndex].innerText = pixel.char
+                }
+              })
+            })
+          }
+        })
+      }
 
-      state.context.layers.forEach((layer, lIndex) => {
-        // console.log(lIndex)
-//         if (layersToRender.includes(layer.layerType)) {
-//           layer.rows.forEach((row, rIndex) => {
-//             row.forEach((pixel, pIndex) => {
-//               if (pixel.char !== '') {
-//                 theGrid[rIndex][pIndex].innerText = pixel.char
-//               }
-//             })
-//           })
-//         }
-//       })
+      // state.context.layers.forEach((layer, lIndex) => {
+      // console.log(lIndex)
+      //         if (layersToRender.includes(layer.layerType)) {
+      //           layer.rows.forEach((row, rIndex) => {
+      //             row.forEach((pixel, pIndex) => {
+      //               if (pixel.char !== '') {
+      //                 theGrid[rIndex][pIndex].innerText = pixel.char
+      //               }
+      //             })
+      //           })
+      //         }
+      //       })
 
+      // })
     })
-  })
-}
+  }
 })
-
 
 // actor.subscribe((state) => {
 //   const layersToRender = ['shoulders~forward~base']
