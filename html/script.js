@@ -71,7 +71,6 @@ const machine = createMachine({
         layers: {
           initial: 'start_update',
           states: {
-
             start_update: {
               entry: [
                 assign({
@@ -81,14 +80,13 @@ const machine = createMachine({
               ],
               after: { target: 'eyes_countdown' },
             },
-
             eyes_countdown: {
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
                   countdown_eyes: (context) => {
                     if (context.countdown_eyes === 0) {
-                      return 10
+                      return 14
                     } else {
                       return context.countdown_eyes - 1
                     }
@@ -98,38 +96,33 @@ const machine = createMachine({
               ],
               after: { target: 'pointing_countdown' },
             },
-
             pointing_countdown: {
               entry: [
-                // log('STATE: Updating eyes'),
                 assign({
                   countdown_pointing: (context) => {
                     if (context.countdown_pointing === 0) {
-                      return 8
+                      return 12
                     } else {
                       return context.countdown_pointing - 1
                     }
                   },
-
-                  // pointing: (context) => {
-                  //   if (context.typingOn) {
-                  //     return ["down", "looking"][1]
-                  //   } else {
-                  //     return "forward"
-                  //   }
-                  // },
-
-                  // visibleLayers: (context) => {
-                  //   const newVisibleLayers = [...context.visibleLayers]
-                  //   newVisibleLayers.push(2)
-                  //   return newVisibleLayers
-                  // },
                 }),
               ],
               after: { target: 'keyboard_countdown' },
             },
             keyboard_countdown: {
               after: { target: 'mouth_countdown' },
+              entry: [
+                assign({
+                  countdown_keyboard: (context) => {
+                    if (context.countdown_pointing === 0) {
+                      return 3
+                    } else {
+                      return context.countdown_pointing - 1
+                    }
+                  },
+                }),
+              ],
             },
             mouth_countdown: {
               after: { target: 'shoulders_countdown' },
@@ -140,7 +133,6 @@ const machine = createMachine({
             snout_countdown: {
               after: { target: 'pointing_switch' },
             },
-
             pointing_switch: {
               entry: [
                 assign({
@@ -174,7 +166,6 @@ const machine = createMachine({
 
               after: { target: 'head_switch' },
             },
-
             head_switch: {
               entry: [
                 assign({
@@ -191,7 +182,6 @@ const machine = createMachine({
               ],
               after: { target: 'eyes_switch' },
             },
-
             eyes_switch: {
               entry: [
                 assign({
@@ -209,6 +199,22 @@ const machine = createMachine({
                       } else {
                        newLayers.push(18)
                       }
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'keyboard_switch' },
+            },
+            keyboard_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.typingOn) {
+                      newLayers.push(46)
+                    } else {
+                      newLayers.push(45)
                     }
                     return newLayers
                   },
