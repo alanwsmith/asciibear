@@ -11,7 +11,9 @@ const pickLayer = (layerType) => {
       possibleLayers.push(layerIndex)
     }
   })
-  return possibleLayers[0]
+  return possibleLayers[
+    Math.floor(Math.random() * possibleLayers.length)
+  ]
 }
 
 const machine = createMachine({
@@ -32,12 +34,7 @@ const machine = createMachine({
     loading: {
       entry: log('started!'),
       on: {
-        KICKOFF: {
-          target: 'alive',
-          // actions: (context, event) => {
-          //   context.layers = event.struct.layers
-          // },
-        },
+        KICKOFF: { target: 'alive'},
       },
     },
     alive: {
@@ -223,9 +220,9 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.typingOn) {
-                      newLayers.push(Math.floor(Math.random() * 10) + 46)
+                      newLayers.push(pickLayer("keyboard-active"))
                     } else {
-                      newLayers.push(45)
+                      newLayers.push(pickLayer("keyboard-inactive"))
                     }
                     return newLayers
                   },
