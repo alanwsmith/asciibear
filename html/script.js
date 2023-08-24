@@ -212,7 +212,7 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.typingOn) {
-                      newLayers.push(46)
+                      newLayers.push(Math.floor(Math.random() * 10) + 46)
                     } else {
                       newLayers.push(45)
                     }
