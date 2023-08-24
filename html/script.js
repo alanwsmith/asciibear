@@ -34,14 +34,19 @@ const machine = createMachine({
     countdown_mouth: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
-    visible_layers: [],
+    visibleLayers: [],
     typingOn: false,
   },
   states: {
     loading: {
       entry: log('started!'),
       on: {
-        KICKOFF: { target: 'alive' },
+        KICKOFF: {
+          target: 'alive',
+          actions: (context, event) => {
+            context.layers = event.struct.layers
+          },
+        },
       },
     },
     alive: {
@@ -67,7 +72,7 @@ const machine = createMachine({
               ],
               after: [
                 {
-                  delay: () => {return 180 },
+                  delay: () => {return 380 },
                   target: 'typingOff',
                 },
               ],
@@ -89,6 +94,7 @@ const machine = createMachine({
                       return ctx.countdown_eyes - 1
                     }
                   },
+                  trigger: false,
                 }),
               ],
               after: { target: 'head_countdown' },
@@ -105,8 +111,8 @@ const machine = createMachine({
                       return ctx.countdown_eyes - 1
                     }
                   },
-                  visible_layers: (ctx) => {
-                    const newVisibleLayers = [...ctx.visible_layers]
+                  visibleLayers: (ctx) => {
+                    const newVisibleLayers = [...ctx.visibleLayers]
                     newVisibleLayers.push(2)
                     return newVisibleLayers
                   },
@@ -134,9 +140,9 @@ const machine = createMachine({
             eyes_switch: {
               entry: [
                 assign({
-                  visible_layers: (ctx) => {
+                  visibleLayers: (ctx) => {
                     if (ctx.countdown_eyes === 0) {
-                      if (ctx.visible_layers[0] === 19) {
+                      if (ctx.visibleLayers[0] === 19) {
                         return [17]
                       } else {
                         return [19]
@@ -151,7 +157,10 @@ const machine = createMachine({
             },
 
             delay: {
-              entry: [log((ctx, e) => `VL: ${ctx.typingOn}`)],
+              entry: [
+                // log((ctx, e) => `VL: ${ctx.typingOn}`),
+                assign({ trigger: true })
+              ],
               after: [
                 {
                   delay: () => {
@@ -169,6 +178,37 @@ const machine = createMachine({
 })
 
 const actor = interpret(machine).start()
+
+
+actor.subscribe((state) => {
+  if (state.context.trigger) {
+  window.requestAnimationFrame(() => {
+    console.log(state.context.visibleLayers)
+//     if (state.context.layers[0]) {
+//       state.context.layers[0].rows.forEach((row, rIndex) => {
+//         row.forEach((pixel, pIndex) => {
+//           theGrid[rIndex][pIndex].innerText = ' '
+//         })
+//       })
+
+      state.context.layers.forEach((layer, lIndex) => {
+        // console.log(lIndex)
+//         if (layersToRender.includes(layer.layerType)) {
+//           layer.rows.forEach((row, rIndex) => {
+//             row.forEach((pixel, pIndex) => {
+//               if (pixel.char !== '') {
+//                 theGrid[rIndex][pIndex].innerText = pixel.char
+//               }
+//             })
+//           })
+//         }
+//       })
+
+    })
+  })
+}
+})
+
 
 // actor.subscribe((state) => {
 //   const layersToRender = ['shoulders~forward~base']
