@@ -11,9 +11,7 @@ const pickLayer = (layerType) => {
       possibleLayers.push(layerIndex)
     }
   })
-  return possibleLayers[
-    Math.floor(Math.random() * possibleLayers.length)
-  ]
+  return possibleLayers[Math.floor(Math.random() * possibleLayers.length)]
 }
 
 const machine = createMachine({
@@ -21,25 +19,60 @@ const machine = createMachine({
   initial: 'loading',
   context: {
     countdown_eyes: 0,
-    countdown_pointing: 0,
     countdown_keyboard: 0,
     countdown_mouth: 0,
+    countdown_pointing: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
-    visibleLayers: [],
+    isTalking: false,
     isTyping: false,
     pointing: 'forward',
+    visibleLayers: [],
   },
   states: {
     loading: {
       entry: log('started!'),
       on: {
-        KICKOFF: { target: 'alive'},
+        KICKOFF: { target: 'alive' },
       },
     },
     alive: {
       type: 'parallel',
       states: {
+        talking: {
+          initial: 'mouthNotMoving',
+          states: {
+            mouthNotMoving: {
+              on: { STARTTALKING: { target: ['mouthMoving'] } },
+              entry: [
+                assign({
+                  isTalking: () => {
+                    return false
+                  },
+                }),
+              ],
+            },
+            mouthMoving: {
+              on: { STARTTALKING: { target: ['mouthMoving'] } },
+              entry: [
+                assign({
+                  isTalking: () => {
+                    return true
+                  },
+                }),
+              ],
+              after: [
+                {
+                  delay: () => {
+                    return 150
+                  },
+                  target: 'mouthNotMoving',
+                },
+              ],
+            },
+          },
+        },
+
         typing: {
           initial: 'typingOff',
           states: {
@@ -173,22 +206,22 @@ const machine = createMachine({
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
                       if (context.countdown_eyes === 0) {
-                        newLayers.push(pickLayer("looking-eyes-blinking"))
+                        newLayers.push(pickLayer('looking-eyes-blinking'))
                       } else {
-                        newLayers.push(pickLayer("looking-eyes-open"))
+                        newLayers.push(pickLayer('looking-eyes-open'))
                       }
                     } else {
                       if (context.isTyping) {
                         if (context.countdown_eyes === 0) {
-                          newLayers.push(pickLayer("typing-eyes-blinking"))
+                          newLayers.push(pickLayer('typing-eyes-blinking'))
                         } else {
-                          newLayers.push(pickLayer("typing-eyes-open"))
+                          newLayers.push(pickLayer('typing-eyes-open'))
                         }
                       } else {
                         if (context.countdown_eyes === 0) {
-                          newLayers.push(pickLayer("forward-eyes-blinking"))
+                          newLayers.push(pickLayer('forward-eyes-blinking'))
                         } else {
-                          newLayers.push(pickLayer("forward-eyes-open"))
+                          newLayers.push(pickLayer('forward-eyes-open'))
                         }
                       }
                     }
@@ -204,9 +237,9 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
-                      newLayers.push(pickLayer("looking-head-base"))
+                      newLayers.push(pickLayer('looking-head-base'))
                     } else {
-                      newLayers.push(pickLayer("forward-head-base"))
+                      newLayers.push(pickLayer('forward-head-base'))
                     }
                     return newLayers
                   },
@@ -220,9 +253,9 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.isTyping) {
-                      newLayers.push(pickLayer("keyboard-active"))
+                      newLayers.push(pickLayer('keyboard-active'))
                     } else {
-                      newLayers.push(pickLayer("keyboard-inactive"))
+                      newLayers.push(pickLayer('keyboard-inactive'))
                     }
                     return newLayers
                   },
@@ -231,6 +264,35 @@ const machine = createMachine({
               after: { target: 'mouth_switch' },
             },
             mouth_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.isTalking) {
+                      if (context.pointing === 'looking') {
+                        newLayers.push(pickLayer('looking-mouth-talking'))
+                      } else {
+                        if (context.isTyping) {
+                          newLayers.push(pickLayer('typing-mouth-talking'))
+                        } else {
+                          newLayers.push(pickLayer('forward-mouth-talking'))
+                        }
+                      }
+                    } else {
+                      if (context.pointing === 'looking') {
+                        newLayers.push(pickLayer('looking-mouth-closed'))
+                      } else {
+                        if (context.isTyping) {
+                          newLayers.push(pickLayer('typing-mouth-closed'))
+                        } else {
+                          newLayers.push(pickLayer('forward-mouth-closed'))
+                        }
+                      }
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
               after: { target: 'shoulders_switch' },
             },
             shoulders_switch: {
@@ -278,7 +340,7 @@ const machine = createMachine({
               after: [
                 {
                   delay: () => {
-                    return Math.floor(Math.random() * 180) + 160
+                    return Math.floor(Math.random() * 80) + 60
                   },
                   target: 'start_update',
                 },
@@ -321,7 +383,77 @@ actor.subscribe((state) => {
   }
 })
 
+let ws = new WebSocket('ws://127.0.0.1:3302/ws')
 
+ws.onopen = (event) => {
+  console.log('Connected to websocket')
+  console.log(new Date())
+}
+
+ws.onmessage = (event) => {
+  const payload = JSON.parse(event.data)
+  if (payload.key === 'dB') {
+    if (payload.value > 0.007) {
+      actor.send({ type: 'STARTTALKING' })
+    }
+  } else if (payload.key === 'key') {
+    actor.send({ type: 'STARTTYPING' })
+  } else if (payload.key === 'mousemove') {
+  } else if (payload.key === 'bearbgcolor') {
+  } else if (payload.key === 'bearcolor') {
+  } else if (payload.key === 'screen_position') {
+  }
+}
+
+const make_grid = (data) => {
+  let rows = 0
+  let cols = 0
+
+  for (let l = 0; l < data.layers.length; l++) {
+    rows = Math.max(rows, data.layers[l].rows.length)
+    for (let r = 0; r < data.layers[l].rows.length; r++) {
+      cols = Math.max(cols, data.layers[l].rows[r].length)
+    }
+  }
+
+  const newT = document.createElement('table')
+  newT.id = 'bearTable'
+  for (let r = 0; r <= rows; r++) {
+    const newTr = document.createElement('tr')
+    for (let c = 0; c <= cols; c++) {
+      const newTd = document.createElement('td')
+      newTd.classList.add('pixel')
+      newTd.innerHTML = ''
+      newTr.appendChild(newTd)
+    }
+    newT.appendChild(newTr)
+  }
+  bear.appendChild(newT)
+  const grows = bear.getElementsByTagName('tr')
+  for (let grow = 0; grow < grows.length; grow++) {
+    const newGrow = []
+    gcells = grows[grow].getElementsByTagName('td')
+    for (let gcell = 0; gcell < gcells.length; gcell++) {
+      newGrow.push(gcells[gcell])
+    }
+    theGrid.push(newGrow)
+  }
+}
+
+const init = () => {
+  const req = new Request('bears.json')
+  fetch(req)
+    .then((response) => {
+      return response.json()
+    })
+    .then((data) => {
+      make_grid(data)
+      layers = data.layers
+      actor.send({ type: 'KICKOFF' })
+    })
+}
+
+document.addEventListener('DOMContentLoaded', init)
 
 // actor.subscribe((state) => {
 //   if (state.context.trigger) {
@@ -350,26 +482,6 @@ actor.subscribe((state) => {
 //     })
 //   }
 // })
-
-// const pickOption = (layerTypes, context) => {
-//   const returnVisible = [...context.visibleLayers]
-//   layerTypes.forEach((layerType) => {
-//     const parts = layerType.split('~')
-//     const availableItems = []
-//     context.layers.forEach((l, lIndex) => {
-//       if (l.layerType.startsWith(parts[0])) {
-//         returnVisible[lIndex] = false
-//       }
-//       if (l.layerType === layerType) {
-//         availableItems.push(lIndex)
-//       }
-//     })
-//     returnVisible[
-//       availableItems[Math.floor(Math.random() * availableItems.length)]
-//     ] = true
-//   })
-//   return returnVisible
-// }
 
 // actor.subscribe((state) => {
 //   const layersToRender = ['shoulders~forward~base']
@@ -1064,29 +1176,6 @@ actor.subscribe((state) => {
 
 // const actor = interpret(machine).start()
 
-let ws = new WebSocket('ws://127.0.0.1:3302/ws')
-
-ws.onopen = (event) => {
-  console.log('Connected to websocket')
-  console.log(new Date())
-}
-
-ws.onmessage = (event) => {
-  const payload = JSON.parse(event.data)
-  if (payload.key === 'dB') {
-    if (payload.value > 0.007) {
-      actor.send({ type: 'STARTTALKING' })
-    }
-  } else if (payload.key === 'key') {
-    actor.send({ type: 'STARTTYPING' })
-    actor.send({ type: 'STARTLOOKING' })
-  } else if (payload.key === 'mousemove') {
-  } else if (payload.key === 'bearbgcolor') {
-  } else if (payload.key === 'bearcolor') {
-  } else if (payload.key === 'screen_position') {
-  }
-}
-
 // } else if (payload.key === 'mousemove') {
 //   mouseXglobal = payload.value[0]
 //   mouseYglobal = payload.value[1]
@@ -1125,54 +1214,3 @@ ws.onmessage = (event) => {
 //     }
 //   })
 // })
-
-const make_grid = (data) => {
-  let rows = 0
-  let cols = 0
-
-  for (let l = 0; l < data.layers.length; l++) {
-    rows = Math.max(rows, data.layers[l].rows.length)
-    for (let r = 0; r < data.layers[l].rows.length; r++) {
-      cols = Math.max(cols, data.layers[l].rows[r].length)
-    }
-  }
-
-  const newT = document.createElement('table')
-  newT.id = 'bearTable'
-  for (let r = 0; r <= rows; r++) {
-    const newTr = document.createElement('tr')
-    for (let c = 0; c <= cols; c++) {
-      const newTd = document.createElement('td')
-      newTd.classList.add('pixel')
-      newTd.innerHTML = ''
-      newTr.appendChild(newTd)
-    }
-    newT.appendChild(newTr)
-  }
-  bear.appendChild(newT)
-  const grows = bear.getElementsByTagName('tr')
-  for (let grow = 0; grow < grows.length; grow++) {
-    const newGrow = []
-    gcells = grows[grow].getElementsByTagName('td')
-    for (let gcell = 0; gcell < gcells.length; gcell++) {
-      newGrow.push(gcells[gcell])
-    }
-    theGrid.push(newGrow)
-  }
-}
-
-const init = () => {
-  const req = new Request('bears.json')
-  fetch(req)
-    .then((response) => {
-      return response.json()
-    })
-    .then((data) => {
-      make_grid(data)
-      layers = data.layers
-      // actor.send({ type: 'KICKOFF', struct: data })
-      actor.send({ type: 'KICKOFF' })
-    })
-}
-
-document.addEventListener('DOMContentLoaded', init)
