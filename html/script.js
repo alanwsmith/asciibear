@@ -94,6 +94,30 @@ const machine = createMachine({
                   trigger: false,
                 }),
               ],
+              after: { target: 'keyboard_countdown' },
+            },
+            keyboard_countdown: {
+              after: { target: 'mouth_countdown' },
+              entry: [
+                assign({
+                  countdown_keyboard: (context) => {
+                    if (context.countdown_pointing === 0) {
+                      const randNum = Math.floor(Math.random() * 10)
+                      if (randNum > 9) {
+                        return 3
+                      } else if (randNum > 7) {
+                        return 2
+                      } else {
+                        return 1
+                      }
+                    } else {
+                      return context.countdown_pointing - 1
+                    }
+                  },
+                }),
+              ],
+            },
+            mouth_countdown: {
               after: { target: 'pointing_countdown' },
             },
             pointing_countdown: {
@@ -108,23 +132,6 @@ const machine = createMachine({
                   },
                 }),
               ],
-              after: { target: 'keyboard_countdown' },
-            },
-            keyboard_countdown: {
-              after: { target: 'mouth_countdown' },
-              entry: [
-                assign({
-                  countdown_keyboard: (context) => {
-                    if (context.countdown_pointing === 0) {
-                      return 3
-                    } else {
-                      return context.countdown_pointing - 1
-                    }
-                  },
-                }),
-              ],
-            },
-            mouth_countdown: {
               after: { target: 'shoulders_countdown' },
             },
             shoulders_countdown: {
@@ -137,46 +144,11 @@ const machine = createMachine({
               entry: [
                 assign({
                   pointing: (context) => {
-                    // const newLayers = [...context.visibleLayers]
                     if (context.countdown_pointing === 0) {
                       return ["looking", "forward"][Math.floor(Math.random() * 2)]
-                      // return "forward"
                     } else {
                       return context.pointing
                     }
-                    // if (context.pointing === "looking") {
-                    //   newLayers.push(3)
-                    // } else {
-                    //   newLayers.push(0)
-                    // }
-
-                    // return newLayers
-                    // if (context.countdown_eyes === 0) {
-                    //   if (context.visibleLayers[0] === 19) {
-                    //     return [17]
-                    //   } else {
-                    //     return [19]
-                    //   }
-                    // } else {
-                    //   return [17]
-                    // }
-                  },
-                }),
-              ],
-
-              after: { target: 'head_switch' },
-            },
-            head_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === "looking") {
-                      newLayers.push(3)
-                    } else {
-                      newLayers.push(0)
-                    }
-                    return newLayers
                   },
                 }),
               ],
@@ -199,6 +171,22 @@ const machine = createMachine({
                       } else {
                        newLayers.push(18)
                       }
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'head_switch' },
+            },
+            head_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.pointing === "looking") {
+                      newLayers.push(3)
+                    } else {
+                      newLayers.push(0)
                     }
                     return newLayers
                   },
