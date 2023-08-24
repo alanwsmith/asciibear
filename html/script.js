@@ -67,7 +67,8 @@ const machine = createMachine({
               after: [
                 {
                   delay: (context, event) => {
-                    return Math.floor(Math.random() * 500) + 500
+                    //return Math.floor(Math.random() * 180) + 60
+                    return 180
                   },
                   target: 'keyboardRotator',
                 },
@@ -92,26 +93,11 @@ const machine = createMachine({
             isTyping: {
               entry: [
                 log('STATE: isTyping'),
-                assign({
-                  isTyping: (context) => {
-                    return true
-                    //return pickOption(['keyboard~forward~typing'], context)
-                  },
-                }),
+                assign({ isTyping: true }),
               ],
               on: { STARTTYPING: { target: ['isTyping'] } },
-
-              // after:  [
-              //                         {
-              //                           delay: (context, event) => {
-              //                             return Math.floor(Math.random() * 4500) + 4000
-              //                           },
-              //                           target: 'noTyping',
-              //                         },
-              //                       ],
-
               after: {
-                881: { target: 'notTyping' },
+                581: { target: 'notTyping' },
                 //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
               },
             },
@@ -152,7 +138,53 @@ const machine = createMachine({
 })
 
 const actor = interpret(machine).start()
-actor.subscribe((state) => {})
+actor.subscribe((state) => {
+
+  const layersToRender = ["shoulders~forward~base"]
+  if (state.context.isTyping) {
+    layersToRender.push(`keyboard~active~${state.context.typingKeyboard}`) 
+  } else {
+    layersToRender.push(`keyboard~inactive`) 
+  }
+
+
+  window.requestAnimationFrame(() => {
+    if (state.context.layers[0]) {
+      state.context.layers[0].rows.forEach((row, rIndex) => {
+        row.forEach((pixel, pIndex) => {
+          theGrid[rIndex][pIndex].innerText = ' '
+        })
+      })
+      state.context.layers.forEach((layer, lIndex) => {
+        if (layersToRender.includes(layer.layerType)) {
+          layer.rows.forEach((row, rIndex) => {
+            row.forEach((pixel, pIndex) => {
+              if (pixel.char !== '') {
+                theGrid[rIndex][pIndex].innerText = pixel.char
+              }
+            })
+          })      
+        }
+
+        //console.log(layer)
+
+        // if (state.context.visibleLayers[lIndex]) {
+        //   layer.rows.forEach((row, rIndex) => {
+        //     row.forEach((pixel, pIndex) => {
+        //       if (pixel.char !== '') {
+        //         theGrid[rIndex][pIndex].innerText = pixel.char
+        //       }
+        //     })
+        //   })
+        // }
+
+      })
+    }
+  })
+
+
+
+})
 
 // keeptyping: {
 //   entry: [log('STATE: keeptyping')],
