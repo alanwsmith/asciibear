@@ -34,6 +34,7 @@ const machine = createMachine({
     countdown_mouth: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
+    visible_layers: [],
   },
   states: {
     loading: {
@@ -53,19 +54,38 @@ const machine = createMachine({
                 // log('STATE: Updating eyes'),
                 assign({
                   countdown_eyes: (ctx) => {
-                    console.log(ctx.countdown_eyes)
                     if (ctx.countdown_eyes === 0) {
                       return 30
                     } else {
                       return ctx.countdown_eyes - 1
                     }
-                  }
+                  },
+                  visible_layers: (ctx) => {
+                    return [0]
+                  },
                 }),
               ],
               after: { target: 'head' },
             },
             head: {
               // entry: log('STATE: Updating head'),
+              entry: [
+                // log('STATE: Updating eyes'),
+                assign({
+                  countdown_head: (ctx) => {
+                    if (ctx.countdown_eyes === 0) {
+                      return 40
+                    } else {
+                      return ctx.countdown_eyes - 1
+                    }
+                  },
+                  visible_layers: (ctx) => {
+                    const newVisibleLayers = [...ctx.visible_layers]
+                    newVisibleLayers.push(2)
+                    return newVisibleLayers
+                  },
+                }),
+              ],
               after: { target: 'keyboard' },
             },
             keyboard: {
@@ -85,7 +105,7 @@ const machine = createMachine({
               after: { target: 'delay' },
             },
             delay: {
-              // entry: log('STATE: delay'),
+              entry: [log((ctx, e) => `VL: ${ctx.visible_layers}`)],
               after: [
                 {
                   delay: () => {
