@@ -2,7 +2,17 @@ const { assign, createMachine, interpret, actions, send } = XState
 const { log } = actions
 
 const theGrid = []
-const layers = []
+let layers = []
+
+const pickLayer = (layerType) => {
+  const possibleLayers = []
+  layers.forEach((layer, layerIndex) => {
+    if (layer.layerType === layerType) {
+      possibleLayers.push(layerIndex)
+    }
+  })
+  return possibleLayers[0]
+}
 
 const machine = createMachine({
   predictableActionArguments: true,
@@ -24,9 +34,9 @@ const machine = createMachine({
       on: {
         KICKOFF: {
           target: 'alive',
-          actions: (context, event) => {
-            context.layers = event.struct.layers
-          },
+          // actions: (context, event) => {
+          //   context.layers = event.struct.layers
+          // },
         },
       },
     },
@@ -164,17 +174,25 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.countdown_eyes === 0) {
-                      if (context.pointing === 'looking') {
-                        newLayers.push(5)
+                    if (context.pointing === 'looking') {
+                      if (context.countdown_eyes === 0) {
+                        newLayers.push(pickLayer("looking-eyes-blinking"))
                       } else {
-                        newLayers.push(20)
+                        newLayers.push(pickLayer("looking-eyes-open"))
                       }
                     } else {
-                      if (context.pointing === 'looking') {
-                        newLayers.push(4)
+                      if (context.typingOn) {
+                        if (context.countdown_eyes === 0) {
+                          newLayers.push(pickLayer("typing-eyes-blinking"))
+                        } else {
+                          newLayers.push(pickLayer("typing-eyes-open"))
+                        }
                       } else {
-                        newLayers.push(18)
+                        if (context.countdown_eyes === 0) {
+                          newLayers.push(pickLayer("forward-eyes-blinking"))
+                        } else {
+                          newLayers.push(pickLayer("forward-eyes-open"))
+                        }
                       }
                     }
                     return newLayers
@@ -189,9 +207,9 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
-                      newLayers.push(3)
+                      newLayers.push(pickLayer("looking-head-base"))
                     } else {
-                      newLayers.push(0)
+                      newLayers.push(pickLayer("forward-head-base"))
                     }
                     return newLayers
                   },
@@ -284,13 +302,13 @@ actor.subscribe((state) => {
       console.log(state.context.countdown_pointing)
       console.log(state.context.pointing)
       console.log(state.context.visibleLayers)
-      if (state.context.layers[0]) {
-        state.context.layers[0].rows.forEach((row, rIndex) => {
+      if (layers[0]) {
+        layers[0].rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
             theGrid[rIndex][pIndex].innerText = ' '
           })
         })
-        state.context.layers.forEach((layer, lIndex) => {
+        layers.forEach((layer, lIndex) => {
           if (state.context.visibleLayers.includes(lIndex)) {
             layer.rows.forEach((row, rIndex) => {
               row.forEach((pixel, pIndex) => {
@@ -305,6 +323,36 @@ actor.subscribe((state) => {
     })
   }
 })
+
+
+
+// actor.subscribe((state) => {
+//   if (state.context.trigger) {
+//     window.requestAnimationFrame(() => {
+//       console.log(state.context.countdown_pointing)
+//       console.log(state.context.pointing)
+//       console.log(state.context.visibleLayers)
+//       if (state.context.layers[0]) {
+//         state.context.layers[0].rows.forEach((row, rIndex) => {
+//           row.forEach((pixel, pIndex) => {
+//             theGrid[rIndex][pIndex].innerText = ' '
+//           })
+//         })
+//         state.context.layers.forEach((layer, lIndex) => {
+//           if (state.context.visibleLayers.includes(lIndex)) {
+//             layer.rows.forEach((row, rIndex) => {
+//               row.forEach((pixel, pIndex) => {
+//                 if (pixel.char !== '') {
+//                   theGrid[rIndex][pIndex].innerText = pixel.char
+//                 }
+//               })
+//             })
+//           }
+//         })
+//       }
+//     })
+//   }
+// })
 
 // const pickOption = (layerTypes, context) => {
 //   const returnVisible = [...context.visibleLayers]
@@ -1124,7 +1172,9 @@ const init = () => {
     })
     .then((data) => {
       make_grid(data)
-      actor.send({ type: 'KICKOFF', struct: data })
+      layers = data.layers
+      // actor.send({ type: 'KICKOFF', struct: data })
+      actor.send({ type: 'KICKOFF' })
     })
 }
 
