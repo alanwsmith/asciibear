@@ -27,7 +27,7 @@ const machine = createMachine({
     countdown_shoulders: 0,
     countdown_snout: 0,
     visibleLayers: [],
-    typingOn: false,
+    isTyping: false,
     pointing: 'forward',
   },
   states: {
@@ -44,20 +44,20 @@ const machine = createMachine({
           initial: 'typingOff',
           states: {
             typingOff: {
-              on: { STARTTYPING: { target: ['typingOn'] } },
+              on: { STARTTYPING: { target: ['isTyping'] } },
               entry: [
                 assign({
-                  typingOn: () => {
+                  isTyping: () => {
                     return false
                   },
                 }),
               ],
             },
-            typingOn: {
-              on: { STARTTYPING: { target: ['typingOn'] } },
+            isTyping: {
+              on: { STARTTYPING: { target: ['isTyping'] } },
               entry: [
                 assign({
-                  typingOn: () => {
+                  isTyping: () => {
                     return true
                   },
                 }),
@@ -150,7 +150,7 @@ const machine = createMachine({
               entry: [
                 assign({
                   pointing: (context) => {
-                    if (context.typingOn) {
+                    if (context.isTyping) {
                       if (context.countdown_pointing === 0) {
                         return ['looking', 'forward'][
                           Math.floor(Math.random() * 2)
@@ -178,7 +178,7 @@ const machine = createMachine({
                         newLayers.push(pickLayer("looking-eyes-open"))
                       }
                     } else {
-                      if (context.typingOn) {
+                      if (context.isTyping) {
                         if (context.countdown_eyes === 0) {
                           newLayers.push(pickLayer("typing-eyes-blinking"))
                         } else {
@@ -219,7 +219,7 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.typingOn) {
+                    if (context.isTyping) {
                       newLayers.push(pickLayer("keyboard-active"))
                     } else {
                       newLayers.push(pickLayer("keyboard-inactive"))
@@ -257,7 +257,7 @@ const machine = createMachine({
                     if (context.pointing === 'looking') {
                       newLayers.push(6)
                     } else {
-                      if (context.typingOn) {
+                      if (context.isTyping) {
                         newLayers.push(17)
                       } else {
                         newLayers.push(16)
@@ -272,7 +272,7 @@ const machine = createMachine({
 
             delay: {
               entry: [
-                // log((context, e) => `VL: ${context.typingOn}`),
+                // log((context, e) => `VL: ${context.isTyping}`),
                 assign({ trigger: true }),
               ],
               after: [
