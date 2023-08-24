@@ -20,12 +20,16 @@ const machine = createMachine({
   context: {
     countdown_eyes: 0,
     countdown_keyboard: 0,
+    countdown_mouse: 0,
     countdown_mouth: 0,
     countdown_pointing: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
+    isMousing: false,
+    isMousingBuffer: 0,
     isTalking: false,
     isTyping: false,
+    lastActiveMouse: null,
     pointing: 'forward',
     visibleLayers: [],
   },
@@ -38,7 +42,48 @@ const machine = createMachine({
     },
     alive: {
       type: 'parallel',
-      states: {
+      states: {  
+
+        mousing: {
+          initial: 'mouseNotMoving',
+          states: {
+            mouseNotMoving: {
+              on: { STARTMOUSING: { target: ['mouseMoving'] } },
+              entry: [
+                assign({
+                  isMousing: false,
+                  isMousingBuffer: 0
+                }),
+              ],
+            },
+            mouseMoving: {
+              on: { STARTMOUSING: { target: ['mouseMoving'] } },
+              entry: [
+                assign({
+                  isMousingBuffer: (context) => {
+                    return context.isMousingBuffer + 1
+                  },
+                  isMousing: (context) => {
+                    if (context.isMousingBuffer > 10) {
+                      return true
+                    } else {
+                      return false
+                    }
+                  },
+                }),
+              ],
+              after: [
+                {
+                  delay: () => {
+                    return 250
+                  },
+                  target: 'mouseNotMoving',
+                },
+              ],
+            },
+          },
+        },
+
         talking: {
           initial: 'mouthNotMoving',
           states: {
@@ -98,7 +143,7 @@ const machine = createMachine({
               after: [
                 {
                   delay: () => {
-                    return 380
+                    return 410
                   },
                   target: 'typingOff',
                 },
@@ -136,7 +181,6 @@ const machine = createMachine({
               after: { target: 'keyboard_countdown' },
             },
             keyboard_countdown: {
-              after: { target: 'mouth_countdown' },
               entry: [
                 assign({
                   countdown_keyboard: (context) => {
@@ -155,6 +199,28 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'mouse_countdown' },
+            },
+            mouse_countdown: {
+              entry: [
+                assign({
+                  countdown_mouse: (context) => {
+                    if (context.countdown_mouse === 0) {
+                      const randNum = Math.floor(Math.random() * 10)
+                      if (randNum > 9) {
+                        return 3
+                      } else if (randNum > 7) {
+                        return 2
+                      } else {
+                        return 1
+                      }
+                    } else {
+                      return context.countdown_mouse - 1
+                    }
+                  },
+                }),
+              ],
+              after: { target: 'mouth_countdown' },
             },
             mouth_countdown: {
               after: { target: 'pointing_countdown' },
@@ -191,7 +257,10 @@ const machine = createMachine({
                       } else {
                         return context.pointing
                       }
-                    } else {
+                    } else if (context.isMousing) {
+                      return "looking"
+                    }
+                    else {
                       return 'forward'
                     }
                   },
@@ -252,10 +321,42 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.isTyping) {
+                    if (context.isMousing) {
+                      newLayers.push(pickLayer('mouse-keyboard'))
+                    } else if (context.isTyping) {
                       newLayers.push(pickLayer('keyboard-active'))
                     } else {
                       newLayers.push(pickLayer('keyboard-inactive'))
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'mouse_pick' },
+            },
+            mouse_pick: {
+              entry: [
+                assign({
+              lastActiveMouse: (context) => {
+                if (context.lastActiveMouse === null) {
+                  return pickLayer('mouse-active')
+                } else if (context.countdown_mouse === 0) {
+                  return pickLayer('mouse-active')
+                } else {
+                  return context.lastActiveMouse
+                }
+              },})],
+              after: { target: 'mouse_switch' },
+            },
+            mouse_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.isMousing) {
+                      newLayers.push(context.lastActiveMouse)
+                    } else {
+                      newLayers.push(pickLayer('mouse-inactive'))
                     }
                     return newLayers
                   },
@@ -358,9 +459,9 @@ const actor = interpret(machine).start()
 actor.subscribe((state) => {
   if (state.context.trigger) {
     window.requestAnimationFrame(() => {
-      console.log(state.context.countdown_pointing)
-      console.log(state.context.pointing)
-      console.log(state.context.visibleLayers)
+      // console.log(state.context.countdown_pointing)
+      // console.log(state.context.pointing)
+      // console.log(state.context.visibleLayers)
       if (layers[0]) {
         layers[0].rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
@@ -399,6 +500,7 @@ ws.onmessage = (event) => {
   } else if (payload.key === 'key') {
     actor.send({ type: 'STARTTYPING' })
   } else if (payload.key === 'mousemove') {
+    actor.send({ type: 'STARTMOUSING' })
   } else if (payload.key === 'bearbgcolor') {
   } else if (payload.key === 'bearcolor') {
   } else if (payload.key === 'screen_position') {
