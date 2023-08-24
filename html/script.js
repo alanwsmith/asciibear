@@ -36,6 +36,7 @@ const machine = createMachine({
     countdown_snout: 0,
     visibleLayers: [],
     typingOn: false,
+    pointing: "forward",
   },
   states: {
     loading: {
@@ -93,35 +94,44 @@ const machine = createMachine({
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
-                  countdown_eyes: (ctx) => {
-                    if (ctx.countdown_eyes === 0) {
+                  countdown_eyes: (context) => {
+                    if (context.countdown_eyes === 0) {
                       return 10
                     } else {
-                      return ctx.countdown_eyes - 1
+                      return context.countdown_eyes - 1
                     }
                   },
                   trigger: false,
                 }),
               ],
-              after: { target: 'head_countdown' },
+              after: { target: 'pointing_countdown' },
             },
-            head_countdown: {
+
+            pointing_countdown: {
               // entry: log('STATE: Updating head'),
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
-                  countdown_head: (ctx) => {
-                    if (ctx.countdown_eyes === 0) {
+                  countdown_head: (context) => {
+                    if (context.countdown_eyes === 0) {
                       return 40
                     } else {
-                      return ctx.countdown_eyes - 1
+                      return context.countdown_eyes - 1
                     }
                   },
-                  visibleLayers: (ctx) => {
-                    const newVisibleLayers = [...ctx.visibleLayers]
-                    newVisibleLayers.push(2)
-                    return newVisibleLayers
+                  pointing: (context) => {
+                    if (context.typingOn) {
+                      return ["down", "looking"][1]
+                    } else {
+                      return "forward"
+                    }
                   },
+
+                  // visibleLayers: (context) => {
+                  //   const newVisibleLayers = [...context.visibleLayers]
+                  //   newVisibleLayers.push(2)
+                  //   return newVisibleLayers
+                  // },
                 }),
               ],
               after: { target: 'keyboard_countdown' },
@@ -146,9 +156,9 @@ const machine = createMachine({
             eyes_switch: {
               entry: [
                 assign({
-                  visibleLayers: (ctx) => {
-                    if (ctx.countdown_eyes === 0) {
-                      if (ctx.visibleLayers[0] === 19) {
+                  visibleLayers: (context) => {
+                    if (context.countdown_eyes === 0) {
+                      if (context.visibleLayers[0] === 19) {
                         return [17]
                       } else {
                         return [19]
@@ -159,12 +169,42 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'head_switch' },
+            },
+
+            head_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.pointing === "looking") {
+                      newLayers.push(3)
+                    } else {
+                      newLayers.push(0)
+                    }
+
+                    return newLayers
+                    // if (context.countdown_eyes === 0) {
+                    //   if (context.visibleLayers[0] === 19) {
+                    //     return [17]
+                    //   } else {
+                    //     return [19]
+                    //   }
+                    // } else {
+                    //   return [17]
+                    // }
+
+                  },
+                }),
+              ],
+
               after: { target: 'delay' },
             },
 
+
             delay: {
               entry: [
-                // log((ctx, e) => `VL: ${ctx.typingOn}`),
+                // log((context, e) => `VL: ${context.typingOn}`),
                 assign({ trigger: true }),
               ],
               after: [
@@ -207,21 +247,6 @@ actor.subscribe((state) => {
           }
         })
       }
-
-      // state.context.layers.forEach((layer, lIndex) => {
-      // console.log(lIndex)
-      //         if (layersToRender.includes(layer.layerType)) {
-      //           layer.rows.forEach((row, rIndex) => {
-      //             row.forEach((pixel, pIndex) => {
-      //               if (pixel.char !== '') {
-      //                 theGrid[rIndex][pIndex].innerText = pixel.char
-      //               }
-      //             })
-      //           })
-      //         }
-      //       })
-
-      // })
     })
   }
 })
