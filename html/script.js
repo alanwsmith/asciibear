@@ -208,6 +208,28 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'mouth_switch' },
+            },
+            mouth_switch: {
+              after: { target: 'shoulders_switch' },
+            },
+            shoulders_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.pointing === "looking") {
+                      newLayers.push(2)
+                    } else {
+                      newLayers.push(1)
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'snout_switch' },
+            },
+            snout_switch: {
               after: { target: 'delay' },
             },
 
