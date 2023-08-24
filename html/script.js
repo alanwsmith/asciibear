@@ -4,7 +4,6 @@ const { log } = actions
 const theGrid = []
 const layers = []
 
-
 const machine = createMachine({
   predictableActionArguments: true,
   initial: 'loading',
@@ -75,7 +74,7 @@ const machine = createMachine({
               entry: [
                 assign({
                   trigger: false,
-                  visibleLayers: []
+                  visibleLayers: [],
                 }),
               ],
               after: { target: 'eyes_countdown' },
@@ -144,10 +143,16 @@ const machine = createMachine({
               entry: [
                 assign({
                   pointing: (context) => {
-                    if (context.countdown_pointing === 0) {
-                      return ["looking", "forward"][Math.floor(Math.random() * 2)]
+                    if (context.typingOn) {
+                      if (context.countdown_pointing === 0) {
+                        return ['looking', 'forward'][
+                          Math.floor(Math.random() * 2)
+                        ]
+                      } else {
+                        return context.pointing
+                      }
                     } else {
-                      return context.pointing
+                      return 'forward'
                     }
                   },
                 }),
@@ -160,16 +165,16 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.countdown_eyes === 0) {
-                      if (context.pointing === "looking") {
+                      if (context.pointing === 'looking') {
                         newLayers.push(5)
                       } else {
                         newLayers.push(20)
                       }
                     } else {
-                      if (context.pointing === "looking") {
-                       newLayers.push(4)
+                      if (context.pointing === 'looking') {
+                        newLayers.push(4)
                       } else {
-                       newLayers.push(18)
+                        newLayers.push(18)
                       }
                     }
                     return newLayers
@@ -183,7 +188,7 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.pointing === "looking") {
+                    if (context.pointing === 'looking') {
                       newLayers.push(3)
                     } else {
                       newLayers.push(0)
@@ -218,7 +223,7 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.pointing === "looking") {
+                    if (context.pointing === 'looking') {
                       newLayers.push(2)
                     } else {
                       newLayers.push(1)
@@ -234,13 +239,13 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.pointing === "looking") {
+                    if (context.pointing === 'looking') {
                       newLayers.push(6)
                     } else {
                       if (context.typingOn) {
                         newLayers.push(17)
                       } else {
-                      newLayers.push(16)
+                        newLayers.push(16)
                       }
                     }
                     return newLayers
@@ -301,8 +306,6 @@ actor.subscribe((state) => {
   }
 })
 
-
-
 // const pickOption = (layerTypes, context) => {
 //   const returnVisible = [...context.visibleLayers]
 //   layerTypes.forEach((layerType) => {
@@ -322,7 +325,6 @@ actor.subscribe((state) => {
 //   })
 //   return returnVisible
 // }
-
 
 // actor.subscribe((state) => {
 //   const layersToRender = ['shoulders~forward~base']
