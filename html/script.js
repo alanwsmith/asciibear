@@ -1,50 +1,37 @@
-const { assign, createMachine, interpret, actions, send} = XState
+const { assign, createMachine, interpret, actions, send } = XState
 const { log } = actions
 
 const theGrid = []
 const layers = []
 
-// } else if (payload.key === 'mousemove') {
-//   mouseXglobal = payload.value[0]
-//   mouseYglobal = payload.value[1]
-//   actor.send({type: 'MOVEMOUSE'})
-// } else if (payload.key === 'bearbgcolor') {
-//   document.body.style.backgroundColor =
-//     `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
-// } else if (payload.key === 'bearcolor') {
-//   document.body.style.color =
-//     `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
-// } else if (payload.key === "screen_position") {
-//   console.log(payload)
-//   console.log(new Date())
+// const pickOption = (layerTypes, context) => {
+//   const returnVisible = [...context.visibleLayers]
+//   layerTypes.forEach((layerType) => {
+//     const parts = layerType.split('~')
+//     const availableItems = []
+//     context.layers.forEach((l, lIndex) => {
+//       if (l.layerType.startsWith(parts[0])) {
+//         returnVisible[lIndex] = false
+//       }
+//       if (l.layerType === layerType) {
+//         availableItems.push(lIndex)
+//       }
+//     })
+//     returnVisible[
+//       availableItems[Math.floor(Math.random() * availableItems.length)]
+//     ] = true
+//   })
+//   return returnVisible
 // }
-
-const pickOption = (layerTypes, context) => {
-  const returnVisible = [...context.visibleLayers]
-  layerTypes.forEach((layerType) => {
-    const parts = layerType.split('~')
-    const availableItems = []
-    context.layers.forEach((l, lIndex) => {
-      if (l.layerType.startsWith(parts[0])) {
-        returnVisible[lIndex] = false
-      }
-      if (l.layerType === layerType) {
-        availableItems.push(lIndex)
-      }
-    })
-    returnVisible[
-      availableItems[Math.floor(Math.random() * availableItems.length)]
-    ] = true
-  })
-  return returnVisible
-}
 
 const machine = createMachine({
   predictableActionArguments: true,
   initial: 'loading',
   context: {
+    typingKeyboard: 0,
+    isTyping: false,
     layers: [],
-    visibleLayers: [],
+    // visibleLayers: [],
   },
   states: {
     loading: {
@@ -54,9 +41,9 @@ const machine = createMachine({
           target: 'alive',
           actions: (context, event) => {
             context.layers = event.struct.layers
-            context.layers.forEach((l) => {
-              context.visibleLayers.push(false)
-            })
+            // context.layers.forEach((l) => {
+            //   context.visibleLayers.push(false)
+            // })
           },
         },
       },
@@ -64,80 +51,98 @@ const machine = createMachine({
     alive: {
       type: 'parallel',
       states: {
-        lookTimer: {
-          initial: 'forward',
+        currentKeyboard: {
+          initial: 'keyboardRotator',
           states: {
-            forward: {
-              entry: send('STOPTYPING'),
-              // entry: log('STATE: forward'),
-              // entry: {
-              //   actions: (send) => {send('STOPTYPING')}
-              // },
-              on: { STARTTYPING: 'looking' },
-              // entry: {
-              //   // actions: () => {send('STOPTYPING')}
-              // },
-
-              // invoke: {
-              //   src: () => async (send) => {
-              //     send('STOPTYPING')
-              //   },
-              //   onError: {
-              //     target: 'looking',
-              //   },
-              // },
-
-            },
-            looking: {
-              entry: log('STATE: looking'),
-              on: { STARTTYPING: 'looking' },
-              after: {
-                581: {
-                  target: 'forward',
+            keyboardRotator: {
+              entry: [
+                log('STATE: rotationKeyboard'),
+                assign({
+                  typingKeyboard: (context) => {
+                    console.log(context)
+                    return (context.typingKeyboard + 1) % 2
+                  },
+                }),
+              ],
+              after: [
+                {
+                  delay: (context, event) => {
+                    return Math.floor(Math.random() * 500) + 500
+                  },
+                  target: 'keyboardRotator',
                 },
+              ],
+            },
+          },
+        },
+        typing: {
+          initial: 'notTyping',
+          states: {
+            notTyping: {
+              entry: [
+                log('STATE: notTyping'),
+                assign({
+                  isTyping: () => {
+                    return false
+                  },
+                }),
+              ],
+              on: { STARTTYPING: { target: ['isTyping'] } },
+            },
+            isTyping: {
+              entry: [
+                log('STATE: isTyping'),
+                assign({
+                  isTyping: (context) => {
+                    return true
+                    //return pickOption(['keyboard~forward~typing'], context)
+                  },
+                }),
+              ],
+              on: { STARTTYPING: { target: ['isTyping'] } },
+
+              // after:  [
+              //                         {
+              //                           delay: (context, event) => {
+              //                             return Math.floor(Math.random() * 4500) + 4000
+              //                           },
+              //                           target: 'noTyping',
+              //                         },
+              //                       ],
+
+              after: {
+                881: { target: 'notTyping' },
+                //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
               },
             },
           },
         },
-        head: {
+
+        runner: {
           initial: 'forward',
           states: {
             forward: {
-              on: { STARTTYPING: 'looking' },
-              entry: assign({
-                visibleLayers: (context) => {
-                  return pickOption(['head~forward~base'], context)
-                },
-              }),
+              entry: [send('STOPTYPING'), log('STATE: forward')],
+              on: { STARTTYPING: { target: ['looking'] } },
             },
+
             looking: {
-              on: { STOPTYPING: 'forward' },
-              entry: assign({
-                visibleLayers: (context) => {
-                  return pickOption(['head~looking~base'], context)
+              on: { STOPTYPING: { target: ['forward'] } },
+              entry: log('STATE: looking'),
+              after: {
+                1581: {
+                  target: 'down',
                 },
-              }),
+              },
             },
-          },
-        },
-        snout: {
-          initial: 'forward',
-          states: {
-            forward: {
-              on: { STARTTYPING: 'looking' },
-              entry: assign({
-                visibleLayers: (context) => {
-                  return pickOption(['snout~forward~up'], context)
+            down: {
+              on: { STOPTYPING: { target: ['forward'] } },
+              entry: log('STATE: down'),
+              after: {
+                1581: {
+                  target: 'looking',
                 },
-              }),
-            },
-            looking: {
-              on: { STOPTYPING: 'forward' },
-              entry: assign({
-                visibleLayers: (context) => {
-                  return pickOption(['snout~looking~base'], context)
-                },
-              }),
+              },
             },
           },
         },
@@ -145,6 +150,165 @@ const machine = createMachine({
     },
   },
 })
+
+const actor = interpret(machine).start()
+actor.subscribe((state) => {})
+
+// keeptyping: {
+//   entry: [log('STATE: keeptyping')],
+//   on: { STARTTYPING: { target: ['keeptyping']} },
+//   after: {
+//     2581: [send('STOPTYPING'), log('STATE: asdf')]
+//   },
+// },
+
+// positions: {
+//   initial: 'forward',
+//   states: {
+//     forward: {
+//       entry: send('STOPTYPING'),
+//       on: { STARTTYPING: 'looking' },
+//     },
+//     looking: {
+//       entry: log('STATE: looking'),
+//       on: { STARTTYPING: 'looking' },
+//       after: {
+//         581: {
+//           target: 'forward',
+//         },
+//       },
+//     },
+//   },
+// },
+
+// const machine = createMachine({
+//   predictableActionArguments: true,
+//   initial: 'loading',
+//   context: {
+//     layers: [],
+//     visibleLayers: [],
+//   },
+//   states: {
+//     loading: {
+//       entry: log('started!'),
+//       on: {
+//         KICKOFF: {
+//           target: 'alive',
+//           actions: (context, event) => {
+//             context.layers = event.struct.layers
+//             context.layers.forEach((l) => {
+//               context.visibleLayers.push(false)
+//             })
+//           },
+//         },
+//       },
+//     },
+//     alive: {
+//       type: 'parallel',
+//       states: {
+//         runner: {
+//           initial: 'forward',
+//           states: {
+//             forward: {
+//               entry: send('STOPTYPING'),
+//               on: { STARTTYPING: 'looking' },
+
+//               // entry: log('STATE: forward'),
+//               // entry: {
+//               //   actions: (send) => {send('STOPTYPING')}
+//               // },
+//               // entry: {
+//               //   // actions: () => {send('STOPTYPING')}
+//               // },
+
+//               // invoke: {
+//               //   src: () => async (send) => {
+//               //     send('STOPTYPING')
+//               //   },
+//               //   onError: {
+//               //     target: 'looking',
+//               //   },
+//               // },
+
+//             },
+//             looking: {
+//               entry: log('STATE: looking'),
+//               on: { STARTTYPING: 'looking' },
+//               after: {
+//                 581: {
+//                   target: 'forward',
+//                 },
+//               },
+//             },
+//           },
+//         },
+//         eyes: {
+//           initial: 'forward',
+//           states: {
+//             forward: {
+//               on: { STARTTYPING: 'looking' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['eyes~forward~open'], context)
+//                 },
+//               }),
+//             },
+//             looking: {
+//               on: { STOPTYPING: 'forward' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['eyes~looking~open'], context)
+//                 },
+//               }),
+//             },
+//           },
+//         },
+//         head: {
+//           initial: 'forward',
+//           states: {
+//             forward: {
+//               on: { STARTTYPING: 'looking' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['head~forward~base'], context)
+//                 },
+//               }),
+//             },
+//             looking: {
+//               on: { STOPTYPING: 'forward' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['head~looking~base'], context)
+//                 },
+//               }),
+//             },
+//           },
+//         },
+//         snout: {
+//           initial: 'forward',
+//           states: {
+//             forward: {
+//               on: { STARTTYPING: 'looking' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['snout~forward~up'], context)
+//                 },
+//               }),
+//             },
+//             looking: {
+//               on: { STOPTYPING: 'forward' },
+//               entry: assign({
+//                 visibleLayers: (context) => {
+//                   return pickOption(['snout~looking~base'], context)
+//                 },
+//               }),
+//             },
+//           },
+//         },
+//       },
+//     },
+//   },
+// })
 
 // const machine = createMachine({
 //   predictableActionArguments: true,
@@ -413,10 +577,7 @@ const machine = createMachine({
 //   },
 // })
 
-
-
-const actor = interpret(machine).start()
-
+// const actor = interpret(machine).start()
 
 let ws = new WebSocket('ws://127.0.0.1:3302/ws')
 
@@ -441,32 +602,44 @@ ws.onmessage = (event) => {
   }
 }
 
+// } else if (payload.key === 'mousemove') {
+//   mouseXglobal = payload.value[0]
+//   mouseYglobal = payload.value[1]
+//   actor.send({type: 'MOVEMOUSE'})
+// } else if (payload.key === 'bearbgcolor') {
+//   document.body.style.backgroundColor =
+//     `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+// } else if (payload.key === 'bearcolor') {
+//   document.body.style.color =
+//     `rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue})`
+// } else if (payload.key === "screen_position") {
+//   console.log(payload)
+//   console.log(new Date())
+// }
 
-
-
-
-actor.subscribe((state) => {
-  window.requestAnimationFrame(() => {
-    if (state.context.layers[0]) {
-      state.context.layers[0].rows.forEach((row, rIndex) => {
-        row.forEach((pixel, pIndex) => {
-          theGrid[rIndex][pIndex].innerText = ' '
-        })
-      })
-      state.context.layers.forEach((layer, lIndex) => {
-        if (state.context.visibleLayers[lIndex]) {
-          layer.rows.forEach((row, rIndex) => {
-            row.forEach((pixel, pIndex) => {
-              if (pixel.char !== '') {
-                theGrid[rIndex][pIndex].innerText = pixel.char
-              }
-            })
-          })
-        }
-      })
-    }
-  })
-})
+// actor.subscribe((state) => {
+//   console.log(state.context.isTyping)
+//   window.requestAnimationFrame(() => {
+//     if (state.context.layers[0]) {
+//       state.context.layers[0].rows.forEach((row, rIndex) => {
+//         row.forEach((pixel, pIndex) => {
+//           theGrid[rIndex][pIndex].innerText = ' '
+//         })
+//       })
+//       state.context.layers.forEach((layer, lIndex) => {
+//         if (state.context.visibleLayers[lIndex]) {
+//           layer.rows.forEach((row, rIndex) => {
+//             row.forEach((pixel, pIndex) => {
+//               if (pixel.char !== '') {
+//                 theGrid[rIndex][pIndex].innerText = pixel.char
+//               }
+//             })
+//           })
+//         }
+//       })
+//     }
+//   })
+// })
 
 const make_grid = (data) => {
   let rows = 0
@@ -513,8 +686,6 @@ const init = () => {
       make_grid(data)
       actor.send({ type: 'KICKOFF', struct: data })
     })
-
-    
 }
 
 document.addEventListener('DOMContentLoaded', init)
