@@ -4,39 +4,20 @@ const { log } = actions
 const theGrid = []
 const layers = []
 
-// const pickOption = (layerTypes, context) => {
-//   const returnVisible = [...context.visibleLayers]
-//   layerTypes.forEach((layerType) => {
-//     const parts = layerType.split('~')
-//     const availableItems = []
-//     context.layers.forEach((l, lIndex) => {
-//       if (l.layerType.startsWith(parts[0])) {
-//         returnVisible[lIndex] = false
-//       }
-//       if (l.layerType === layerType) {
-//         availableItems.push(lIndex)
-//       }
-//     })
-//     returnVisible[
-//       availableItems[Math.floor(Math.random() * availableItems.length)]
-//     ] = true
-//   })
-//   return returnVisible
-// }
 
 const machine = createMachine({
   predictableActionArguments: true,
   initial: 'loading',
   context: {
     countdown_eyes: 0,
-    countdown_head: 0,
+    countdown_pointing: 0,
     countdown_keyboard: 0,
     countdown_mouth: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
     visibleLayers: [],
     typingOn: false,
-    pointing: "forward",
+    pointing: 'forward',
   },
   states: {
     loading: {
@@ -88,8 +69,19 @@ const machine = createMachine({
         },
 
         layers: {
-          initial: 'eyes_countdown',
+          initial: 'start_update',
           states: {
+
+            start_update: {
+              entry: [
+                assign({
+                  trigger: false,
+                  visibleLayers: []
+                }),
+              ],
+              after: { target: 'eyes_countdown' },
+            },
+
             eyes_countdown: {
               entry: [
                 // log('STATE: Updating eyes'),
@@ -113,19 +105,20 @@ const machine = createMachine({
                 // log('STATE: Updating eyes'),
                 assign({
                   countdown_head: (context) => {
-                    if (context.countdown_eyes === 0) {
-                      return 40
+                    if (context.countdown_pointing === 0) {
+                      return 18
                     } else {
-                      return context.countdown_eyes - 1
+                      return context.countdown_pointing - 1
                     }
                   },
-                  pointing: (context) => {
-                    if (context.typingOn) {
-                      return ["down", "looking"][1]
-                    } else {
-                      return "forward"
-                    }
-                  },
+
+                  // pointing: (context) => {
+                  //   if (context.typingOn) {
+                  //     return ["down", "looking"][1]
+                  //   } else {
+                  //     return "forward"
+                  //   }
+                  // },
 
                   // visibleLayers: (context) => {
                   //   const newVisibleLayers = [...context.visibleLayers]
@@ -150,40 +143,24 @@ const machine = createMachine({
             },
             snout_countdown: {
               // entry: log('STATE: Updating snout'),
-              after: { target: 'eyes_switch' },
+              after: { target: 'pointing_switch' },
             },
 
-            eyes_switch: {
+            pointing_switch: {
               entry: [
                 assign({
-                  visibleLayers: (context) => {
-                    if (context.countdown_eyes === 0) {
-                      if (context.visibleLayers[0] === 19) {
-                        return [17]
-                      } else {
-                        return [19]
-                      }
-                    } else {
-                      return [17]
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'head_switch' },
-            },
+                  pointing: (context) => {
+                    // const newLayers = [...context.visibleLayers]
+                    if (context.countdown_pointing === 0) {
+                      return 'looking'
+                    } 
+                    // if (context.pointing === "looking") {
+                    //   newLayers.push(3)
+                    // } else {
+                    //   newLayers.push(0)
+                    // }
 
-            head_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === "looking") {
-                      newLayers.push(3)
-                    } else {
-                      newLayers.push(0)
-                    }
-
-                    return newLayers
+                    // return newLayers
                     // if (context.countdown_eyes === 0) {
                     //   if (context.visibleLayers[0] === 19) {
                     //     return [17]
@@ -193,14 +170,49 @@ const machine = createMachine({
                     // } else {
                     //   return [17]
                     // }
-
                   },
                 }),
               ],
 
+              after: { target: 'head_switch' },
+            },
+
+            head_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    newLayers.push(0)
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'eyes_switch' },
+            },
+
+            eyes_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    return newLayers
+                    // if (context.countdown_eyes === 0) {
+                    //   if (context.visibleLayers[0] === 19) {
+                    //     return newLayers.push(17)
+                    //   } else {
+                    //     return newLayers.push(19)
+                    //   }
+                    // } else {
+                    //   return newLayers.push(17)
+                    // }
+                  },
+                }),
+              ],
               after: { target: 'delay' },
             },
 
+            // after: { target: 'delay' },
+            // },
 
             delay: {
               entry: [
@@ -212,7 +224,7 @@ const machine = createMachine({
                   delay: () => {
                     return Math.floor(Math.random() * 180) + 160
                   },
-                  target: 'eyes_countdown',
+                  target: 'start_update',
                 },
               ],
             },
@@ -250,6 +262,29 @@ actor.subscribe((state) => {
     })
   }
 })
+
+
+
+// const pickOption = (layerTypes, context) => {
+//   const returnVisible = [...context.visibleLayers]
+//   layerTypes.forEach((layerType) => {
+//     const parts = layerType.split('~')
+//     const availableItems = []
+//     context.layers.forEach((l, lIndex) => {
+//       if (l.layerType.startsWith(parts[0])) {
+//         returnVisible[lIndex] = false
+//       }
+//       if (l.layerType === layerType) {
+//         availableItems.push(lIndex)
+//       }
+//     })
+//     returnVisible[
+//       availableItems[Math.floor(Math.random() * availableItems.length)]
+//     ] = true
+//   })
+//   return returnVisible
+// }
+
 
 // actor.subscribe((state) => {
 //   const layersToRender = ['shoulders~forward~base']
