@@ -28,8 +28,18 @@ const machine = createMachine({
   predictableActionArguments: true,
   initial: 'loading',
   context: {
-    typingKeyboard: 0,
-    isTyping: false,
+    parts: {
+      eyes: null,
+      head: null,
+      keyboard: null,
+      mouth: null,
+      snout: null,
+    },
+    markers: {
+      isTyping: false,
+      pointing: 'forward',
+    },
+    markers_pointing: 'forward',
     layers: [],
     // visibleLayers: [],
   },
@@ -51,31 +61,59 @@ const machine = createMachine({
     alive: {
       type: 'parallel',
       states: {
-        currentKeyboard: {
-          initial: 'keyboardRotator',
+        markers: {
+          type: 'parallel',
           states: {
-            keyboardRotator: {
+            pointing: { 
               entry: [
-                log('STATE: rotationKeyboard'),
+                log('STATE: pointing updated'),
                 assign({
-                  typingKeyboard: (context) => {
-                    console.log(context)
-                    return Math.floor(Math.random() * 8)
+                  markers_pointing: (context) => {
+                    console.log(context.markers_pointing)
+                    return 'looking'
                   },
                 }),
               ],
               after: [
                 {
                   delay: (context, event) => {
-                    //return Math.floor(Math.random() * 180) + 60
-                    return 180
+                    return Math.floor(Math.random() * 4180) + 1360
                   },
-                  target: 'keyboardRotator',
+                  target: 'pointing',
                 },
               ],
-            },
+             },
           },
         },
+
+        parts: {
+          type: 'parallel',
+          states: {
+
+            // head: {
+            //   entry: [
+            //     log('STATE: head updated'),
+            //     assign({
+            //       markers_pointing: (context) => {
+            //         console.log(context.markers_pointing)
+            //         return 'looking'
+            //       },
+            //     }),
+            //   ],
+            //   after: [
+            //     {
+            //       delay: (context, event) => {
+            //         return Math.floor(Math.random() * 4180) + 1360
+            //       },
+            //       target: 'head',
+            //     },
+            //   ],
+            // },
+
+
+          },
+        },
+
         typing: {
           initial: 'notTyping',
           states: {
@@ -83,9 +121,7 @@ const machine = createMachine({
               entry: [
                 log('STATE: notTyping'),
                 assign({
-                  isTyping: () => {
-                    return false
-                  },
+                  markers: { isTyping: false },
                 }),
               ],
               on: { STARTTYPING: { target: ['isTyping'] } },
@@ -93,41 +129,12 @@ const machine = createMachine({
             isTyping: {
               entry: [
                 log('STATE: isTyping'),
-                assign({ isTyping: true }),
+                assign({ markers: { isTyping: true } }),
               ],
               on: { STARTTYPING: { target: ['isTyping'] } },
               after: {
                 581: { target: 'notTyping' },
                 //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
-              },
-            },
-          },
-        },
-
-        runner: {
-          initial: 'forward',
-          states: {
-            forward: {
-              entry: [send('STOPTYPING'), log('STATE: forward')],
-              on: { STARTTYPING: { target: ['looking'] } },
-            },
-
-            looking: {
-              on: { STOPTYPING: { target: ['forward'] } },
-              entry: log('STATE: looking'),
-              after: {
-                1581: {
-                  target: 'down',
-                },
-              },
-            },
-            down: {
-              on: { STOPTYPING: { target: ['forward'] } },
-              entry: log('STATE: down'),
-              after: {
-                1581: {
-                  target: 'looking',
-                },
               },
             },
           },
@@ -138,16 +145,14 @@ const machine = createMachine({
 })
 
 const actor = interpret(machine).start()
+
 actor.subscribe((state) => {
-
-  const layersToRender = ["shoulders~forward~base"]
+  const layersToRender = ['shoulders~forward~base']
   if (state.context.isTyping) {
-    layersToRender.push(`keyboard~active~${state.context.typingKeyboard}`) 
+    layersToRender.push(`keyboard~active~${state.context.typingKeyboard}`)
   } else {
-    layersToRender.push(`keyboard~inactive`) 
+    layersToRender.push(`keyboard~inactive`)
   }
-
-
   window.requestAnimationFrame(() => {
     if (state.context.layers[0]) {
       state.context.layers[0].rows.forEach((row, rIndex) => {
@@ -163,7 +168,7 @@ actor.subscribe((state) => {
                 theGrid[rIndex][pIndex].innerText = pixel.char
               }
             })
-          })      
+          })
         }
 
         //console.log(layer)
@@ -177,14 +182,123 @@ actor.subscribe((state) => {
         //     })
         //   })
         // }
-
       })
     }
   })
-
-
-
 })
+
+// const machine = createMachine({
+//   predictableActionArguments: true,
+//   initial: 'loading',
+//   context: {
+//     typingKeyboard: 0,
+//     isTyping: false,
+//     layers: [],
+//     // visibleLayers: [],
+//   },
+//   states: {
+//     loading: {
+//       entry: log('started!'),
+//       on: {
+//         KICKOFF: {
+//           target: 'alive',
+//           actions: (context, event) => {
+//             context.layers = event.struct.layers
+//             // context.layers.forEach((l) => {
+//             //   context.visibleLayers.push(false)
+//             // })
+//           },
+//         },
+//       },
+//     },
+//     alive: {
+//       type: 'parallel',
+//       states: {
+//         currentKeyboard: {
+//           initial: 'keyboardRotator',
+//           states: {
+//             keyboardRotator: {
+//               entry: [
+//                 // log('STATE: rotationKeyboard'),
+//                 assign({
+//                   typingKeyboard: (context) => {
+//                     //console.log(context)
+//                     // TODO: Make this dynamic based off the layers
+//                     return Math.floor(Math.random() * 11)
+//                   },
+//                 }),
+//               ],
+//               after: [
+//                 {
+//                   delay: (context, event) => {
+//                     //return Math.floor(Math.random() * 180) + 60
+//                     return 180
+//                   },
+//                   target: 'keyboardRotator',
+//                 },
+//               ],
+//             },
+//           },
+//         },
+//         typing: {
+//           initial: 'notTyping',
+//           states: {
+//             notTyping: {
+//               entry: [
+//                 // log('STATE: notTyping'),
+//                 assign({
+//                   isTyping: () => {
+//                     return false
+//                   },
+//                 }),
+//               ],
+//               on: { STARTTYPING: { target: ['isTyping'] } },
+//             },
+//             isTyping: {
+//               entry: [
+//                 // log('STATE: isTyping'),
+//                 assign({ isTyping: true }),
+//               ],
+//               on: { STARTTYPING: { target: ['isTyping'] } },
+//               after: {
+//                 581: { target: 'notTyping' },
+//                 //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
+//               },
+//             },
+//           },
+//         },
+//         runner: {
+//           initial: 'forward',
+//           states: {
+//             forward: {
+//               entry: [send('STOPTYPING'), log('STATE: forward')],
+//               on: { STARTTYPING: { target: ['looking'] } },
+//             },
+
+//             looking: {
+//               on: { STOPTYPING: { target: ['forward'] } },
+//               entry: log('STATE: looking'),
+//               after: {
+//                 1581: {
+//                   target: 'down',
+//                 },
+//               },
+//             },
+//             down: {
+//               on: { STOPTYPING: { target: ['forward'] } },
+//               entry: log('STATE: down'),
+//               after: {
+//                 1581: {
+//                   target: 'looking',
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   },
+// })
 
 // keeptyping: {
 //   entry: [log('STATE: keeptyping')],
