@@ -35,6 +35,7 @@ const machine = createMachine({
     countdown_shoulders: 0,
     countdown_snout: 0,
     visible_layers: [],
+    typingOn: false,
   },
   states: {
     loading: {
@@ -46,10 +47,38 @@ const machine = createMachine({
     alive: {
       type: 'parallel',
       states: {
-        layers: {
-          initial: 'eyes',
+        typing: {
+          initial: 'typingOff',
           states: {
-            eyes: {
+            typingOff: {
+              on: { STARTTYPING: { target: ['typingOn'] } },
+              entry: [
+                assign({
+                  typingOn: () => { return false },
+                }),
+              ],
+            },
+            typingOn: {
+              on: { STARTTYPING: { target: ['typingOn'] } },
+              entry: [
+                assign({
+                  typingOn: () => { return true },
+                }),
+              ],
+              after: [
+                {
+                  delay: () => {return 180 },
+                  target: 'typingOff',
+                },
+              ],
+            },
+          },
+        },
+
+        layers: {
+          initial: 'eyes_countdown',
+          states: {
+            eyes_countdown: {
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
@@ -60,14 +89,11 @@ const machine = createMachine({
                       return ctx.countdown_eyes - 1
                     }
                   },
-                  visible_layers: (ctx) => {
-                    return [0]
-                  },
                 }),
               ],
-              after: { target: 'head' },
+              after: { target: 'head_countdown' },
             },
-            head: {
+            head_countdown: {
               // entry: log('STATE: Updating head'),
               entry: [
                 // log('STATE: Updating eyes'),
@@ -86,32 +112,52 @@ const machine = createMachine({
                   },
                 }),
               ],
-              after: { target: 'keyboard' },
+              after: { target: 'keyboard_countdown' },
             },
-            keyboard: {
+            keyboard_countdown: {
               // entry: log('STATE: Updating keyboard'),
-              after: { target: 'mouth' },
+              after: { target: 'mouth_countdown' },
             },
-            mouth: {
+            mouth_countdown: {
               // entry: log('STATE: Updating mouth'),
-              after: { target: 'shoulders' },
+              after: { target: 'shoulders_countdown' },
             },
-            shoulders: {
+            shoulders_countdown: {
               // entry: log('STATE: Updating shoulders'),
-              after: { target: 'snout' },
+              after: { target: 'snout_countdown' },
             },
-            snout: {
+            snout_countdown: {
               // entry: log('STATE: Updating snout'),
+              after: { target: 'eyes_switch' },
+            },
+
+            eyes_switch: {
+              entry: [
+                assign({
+                  visible_layers: (ctx) => {
+                    if (ctx.countdown_eyes === 0) {
+                      if (ctx.visible_layers[0] === 19) {
+                        return [17]
+                      } else {
+                        return [19]
+                      }
+                    } else {
+                      return [17]
+                    }
+                  },
+                }),
+              ],
               after: { target: 'delay' },
             },
+
             delay: {
-              entry: [log((ctx, e) => `VL: ${ctx.visible_layers}`)],
+              entry: [log((ctx, e) => `VL: ${ctx.typingOn}`)],
               after: [
                 {
                   delay: () => {
                     return Math.floor(Math.random() * 380) + 360
                   },
-                  target: 'eyes',
+                  target: 'eyes_countdown',
                 },
               ],
             },
