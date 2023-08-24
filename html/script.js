@@ -230,6 +230,23 @@ const machine = createMachine({
               after: { target: 'snout_switch' },
             },
             snout_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.pointing === "looking") {
+                      newLayers.push(6)
+                    } else {
+                      if (context.typingOn) {
+                        newLayers.push(17)
+                      } else {
+                      newLayers.push(16)
+                      }
+                    }
+                    return newLayers
+                  },
+                }),
+              ],
               after: { target: 'delay' },
             },
 
