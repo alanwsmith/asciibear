@@ -100,7 +100,6 @@ const machine = createMachine({
             },
 
             pointing_countdown: {
-              // entry: log('STATE: Updating head'),
               entry: [
                 // log('STATE: Updating eyes'),
                 assign({
@@ -130,19 +129,15 @@ const machine = createMachine({
               after: { target: 'keyboard_countdown' },
             },
             keyboard_countdown: {
-              // entry: log('STATE: Updating keyboard'),
               after: { target: 'mouth_countdown' },
             },
             mouth_countdown: {
-              // entry: log('STATE: Updating mouth'),
               after: { target: 'shoulders_countdown' },
             },
             shoulders_countdown: {
-              // entry: log('STATE: Updating shoulders'),
               after: { target: 'snout_countdown' },
             },
             snout_countdown: {
-              // entry: log('STATE: Updating snout'),
               after: { target: 'pointing_switch' },
             },
 
@@ -202,24 +197,25 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
+                    if (context.countdown_eyes === 0) {
+                      if (context.pointing === "looking") {
+                        newLayers.push(5)
+                      } else {
+                        newLayers.push(20)
+                      }
+                    } else {
+                      if (context.pointing === "looking") {
+                       newLayers.push(4)
+                      } else {
+                       newLayers.push(18)
+                      }
+                    }
                     return newLayers
-                    // if (context.countdown_eyes === 0) {
-                    //   if (context.visibleLayers[0] === 19) {
-                    //     return newLayers.push(17)
-                    //   } else {
-                    //     return newLayers.push(19)
-                    //   }
-                    // } else {
-                    //   return newLayers.push(17)
-                    // }
                   },
                 }),
               ],
               after: { target: 'delay' },
             },
-
-            // after: { target: 'delay' },
-            // },
 
             delay: {
               entry: [
