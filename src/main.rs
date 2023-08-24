@@ -26,14 +26,13 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 // use tower_http::services::ServeDir;
 // use tower_livereload::LiveReloadLayer;
+use asciibear::connection::Connection;
 use asciibear::screen_capture::screen_capture;
 use axum::response::Html;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-
-use asciibear::connection::Connection;
 // use std::fmt::Display;
 // use std::future::Future;
 use tokio::net::TcpListener;
@@ -65,7 +64,7 @@ async fn main() {
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
         .with_state(app_state);
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5858));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3302));
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
