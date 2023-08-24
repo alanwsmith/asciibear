@@ -28,114 +28,72 @@ const machine = createMachine({
   predictableActionArguments: true,
   initial: 'loading',
   context: {
-    parts: {
-      eyes: null,
-      head: null,
-      keyboard: null,
-      mouth: null,
-      snout: null,
-    },
-    markers: {
-      isTyping: false,
-      pointing: 'forward',
-    },
-    markers_pointing: 'forward',
-    layers: [],
-    // visibleLayers: [],
+    countdown_eyes: 0,
+    countdown_head: 0,
+    countdown_keyboard: 0,
+    countdown_mouth: 0,
+    countdown_shoulders: 0,
+    countdown_snout: 0,
   },
   states: {
     loading: {
       entry: log('started!'),
       on: {
-        KICKOFF: {
-          target: 'alive',
-          actions: (context, event) => {
-            context.layers = event.struct.layers
-            // context.layers.forEach((l) => {
-            //   context.visibleLayers.push(false)
-            // })
-          },
-        },
+        KICKOFF: { target: 'alive' },
       },
     },
     alive: {
       type: 'parallel',
       states: {
-        markers: {
-          type: 'parallel',
+        layers: {
+          initial: 'eyes',
           states: {
-            pointing: { 
+            eyes: {
               entry: [
-                log('STATE: pointing updated'),
+                // log('STATE: Updating eyes'),
                 assign({
-                  markers_pointing: (context) => {
-                    console.log(context.markers_pointing)
-                    return 'looking'
-                  },
+                  countdown_eyes: (ctx) => {
+                    console.log(ctx.countdown_eyes)
+                    if (ctx.countdown_eyes === 0) {
+                      return 30
+                    } else {
+                      return ctx.countdown_eyes - 1
+                    }
+                  }
                 }),
               ],
+              after: { target: 'head' },
+            },
+            head: {
+              // entry: log('STATE: Updating head'),
+              after: { target: 'keyboard' },
+            },
+            keyboard: {
+              // entry: log('STATE: Updating keyboard'),
+              after: { target: 'mouth' },
+            },
+            mouth: {
+              // entry: log('STATE: Updating mouth'),
+              after: { target: 'shoulders' },
+            },
+            shoulders: {
+              // entry: log('STATE: Updating shoulders'),
+              after: { target: 'snout' },
+            },
+            snout: {
+              // entry: log('STATE: Updating snout'),
+              after: { target: 'delay' },
+            },
+            delay: {
+              // entry: log('STATE: delay'),
               after: [
                 {
-                  delay: (context, event) => {
-                    return Math.floor(Math.random() * 4180) + 1360
+                  delay: () => {
+                    return Math.floor(Math.random() * 380) + 360
                   },
-                  target: 'pointing',
+                  target: 'eyes',
                 },
               ],
-             },
-          },
-        },
-
-        parts: {
-          type: 'parallel',
-          states: {
-
-            // head: {
-            //   entry: [
-            //     log('STATE: head updated'),
-            //     assign({
-            //       markers_pointing: (context) => {
-            //         console.log(context.markers_pointing)
-            //         return 'looking'
-            //       },
-            //     }),
-            //   ],
-            //   after: [
-            //     {
-            //       delay: (context, event) => {
-            //         return Math.floor(Math.random() * 4180) + 1360
-            //       },
-            //       target: 'head',
-            //     },
-            //   ],
-            // },
-
-
-          },
-        },
-
-        typing: {
-          initial: 'notTyping',
-          states: {
-            notTyping: {
-              entry: [
-                log('STATE: notTyping'),
-                assign({
-                  markers: { isTyping: false },
-                }),
-              ],
-              on: { STARTTYPING: { target: ['isTyping'] } },
-            },
-            isTyping: {
-              entry: [
-                log('STATE: isTyping'),
-                assign({ markers: { isTyping: true } }),
-              ],
-              on: { STARTTYPING: { target: ['isTyping'] } },
-              after: {
-                581: { target: 'notTyping' },
-                //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
-              },
             },
           },
         },
@@ -146,46 +104,160 @@ const machine = createMachine({
 
 const actor = interpret(machine).start()
 
-actor.subscribe((state) => {
-  const layersToRender = ['shoulders~forward~base']
-  if (state.context.isTyping) {
-    layersToRender.push(`keyboard~active~${state.context.typingKeyboard}`)
-  } else {
-    layersToRender.push(`keyboard~inactive`)
-  }
-  window.requestAnimationFrame(() => {
-    if (state.context.layers[0]) {
-      state.context.layers[0].rows.forEach((row, rIndex) => {
-        row.forEach((pixel, pIndex) => {
-          theGrid[rIndex][pIndex].innerText = ' '
-        })
-      })
-      state.context.layers.forEach((layer, lIndex) => {
-        if (layersToRender.includes(layer.layerType)) {
-          layer.rows.forEach((row, rIndex) => {
-            row.forEach((pixel, pIndex) => {
-              if (pixel.char !== '') {
-                theGrid[rIndex][pIndex].innerText = pixel.char
-              }
-            })
-          })
-        }
+// actor.subscribe((state) => {
+//   const layersToRender = ['shoulders~forward~base']
+//   if (state.context.isTyping) {
+//     layersToRender.push(`keyboard~active~${state.context.typingKeyboard}`)
+//   } else {
+//     layersToRender.push(`keyboard~inactive`)
+//   }
+//   window.requestAnimationFrame(() => {
+//     if (state.context.layers[0]) {
+//       state.context.layers[0].rows.forEach((row, rIndex) => {
+//         row.forEach((pixel, pIndex) => {
+//           theGrid[rIndex][pIndex].innerText = ' '
+//         })
+//       })
+//       state.context.layers.forEach((layer, lIndex) => {
+//         if (layersToRender.includes(layer.layerType)) {
+//           layer.rows.forEach((row, rIndex) => {
+//             row.forEach((pixel, pIndex) => {
+//               if (pixel.char !== '') {
+//                 theGrid[rIndex][pIndex].innerText = pixel.char
+//               }
+//             })
+//           })
+//         }
+//       })
+//     }
+//   })
+// })
 
-        //console.log(layer)
+// const machine = createMachine({
+//   predictableActionArguments: true,
+//   initial: 'loading',
+//   context: {
+//     parts: {
+//       eyes: null,
+//       head: null,
+//       keyboard: null,
+//       mouth: null,
+//       snout: null,
+//     },
+//     markers: {
+//       isTyping: false,
+//       pointing: 'forward',
+//     },
+//     markers_pointing: 'forward',
+//     layers: [],
+//     // visibleLayers: [],
+//   },
+//   states: {
+//     loading: {
+//       entry: log('started!'),
+//       on: {
+//         KICKOFF: {
+//           target: 'alive',
+//           actions: (context, event) => {
+//             context.layers = event.struct.layers
+//             // context.layers.forEach((l) => {
+//             //   context.visibleLayers.push(false)
+//             // })
+//           },
+//         },
+//       },
+//     },
+//     alive: {
+//       type: 'parallel',
+//       states: {
+//         markers: {
+//           type: 'parallel',
+//           states: {
+//             pointing: {
+//               entry: [
+//                 log('STATE: pointing updated'),
+//                 assign({
+//                   markers_pointing: (context) => {
+//                     console.log(context.markers_pointing)
+//                     return 'looking'
+//                   },
+//                 }),
+//               ],
+//               after: [
+//                 {
+//                   delay: (context, event) => {
+//                     return Math.floor(Math.random() * 4180) + 1360
+//                   },
+//                   target: 'pointing',
+//                 },
+//               ],
+//              },
+//           },
+//         },
 
-        // if (state.context.visibleLayers[lIndex]) {
-        //   layer.rows.forEach((row, rIndex) => {
-        //     row.forEach((pixel, pIndex) => {
-        //       if (pixel.char !== '') {
-        //         theGrid[rIndex][pIndex].innerText = pixel.char
-        //       }
-        //     })
-        //   })
-        // }
-      })
-    }
-  })
-})
+//         parts: {
+//           type: 'parallel',
+//           states: {
+
+//             // head: {
+//             //   entry: [
+//             //     log('STATE: head updated'),
+//             //     assign({
+//             //       markers_pointing: (context) => {
+//             //         console.log(context.markers_pointing)
+//             //         return 'looking'
+//             //       },
+//             //     }),
+//             //   ],
+//             //   after: [
+//             //     {
+//             //       delay: (context, event) => {
+//             //         return Math.floor(Math.random() * 4180) + 1360
+//             //       },
+//             //       target: 'head',
+//             //     },
+//             //   ],
+//             // },
+
+//           },
+//         },
+
+//         typing: {
+//           initial: 'notTyping',
+//           states: {
+//             notTyping: {
+//               entry: [
+//                 log('STATE: notTyping'),
+//                 assign({
+//                   markers: { isTyping: false },
+//                 }),
+//               ],
+//               on: { STARTTYPING: { target: ['isTyping'] } },
+//             },
+//             isTyping: {
+//               entry: [
+//                 log('STATE: isTyping'),
+//                 assign({ markers: { isTyping: true } }),
+//               ],
+//               on: { STARTTYPING: { target: ['isTyping'] } },
+//               after: {
+//                 581: { target: 'notTyping' },
+//                 //2581: [{target: 'notTyping'}, send('STOPTYPING'), log('STATE: asdf')]
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   },
+// })
+
+// actions: (context, event) => {
+//   context.layers = event.struct.layers
+//   // context.layers.forEach((l) => {
+//   //   context.visibleLayers.push(false)
+//   // })
+// },
 
 // const machine = createMachine({
 //   predictableActionArguments: true,
