@@ -60,7 +60,7 @@ const machine = createMachine({
                 assign({
                   typingKeyboard: (context) => {
                     console.log(context)
-                    return (context.typingKeyboard + 1) % 2
+                    return Math.floor(Math.random() * 8)
                   },
                 }),
               ],
