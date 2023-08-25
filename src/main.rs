@@ -157,6 +157,7 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
     BearHead(Color),
+    BearEyes(Color),
     BearBgColor(Color),
     None,
 }
@@ -195,6 +196,7 @@ fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
     let (source, cmd) = opt(
         alt((
             twitch_bear_head, 
+            twitch_bear_eyes, 
             twitch_bearbg_color
         ))
         )(source)?;
@@ -205,6 +207,12 @@ fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
     let (source, _) = tag("!head ")(source)?;
     let (source, color) = hex_color(source)?;
     Ok((source, TwitchCommand::BearHead(color)))
+}
+
+fn twitch_bear_eyes(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!eyes ")(source)?;
+    let (source, color) = hex_color(source)?;
+    Ok((source, TwitchCommand::BearEyes(color)))
 }
 
 fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {

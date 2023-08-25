@@ -505,20 +505,28 @@ ws.onmessage = (event) => {
     actor.send({ type: 'STARTTYPING' })
   } else if (payload.key === 'mousemove') {
     actor.send({ type: 'STARTMOUSING' })
-  } else if (payload.key === 'bearbgcolor') {
+  } else if (payload.key === 'bearbg') {
     console.log(payload)
-  } else if (payload.key === 'bearhead') {
+  } else if (payload.key === 'beareyes') {
     console.log(payload)
     const newStyleSheet = document.createElement("style")
     const newStyleText = document.createTextNode(
-      `
-      .forward-head-base, .looking-head-base {
+      `.looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
         color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
       }`
     )
     newStyleSheet.appendChild(newStyleText)
     document.head.appendChild(newStyleSheet)
-    
+  } else if (payload.key === 'bearhead') {
+    console.log(payload)
+    const newStyleSheet = document.createElement("style")
+    const newStyleText = document.createTextNode(
+      `.forward-head-base, .looking-head-base {
+        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
+      }`
+    )
+    newStyleSheet.appendChild(newStyleText)
+    document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'screen_position') {
   }
 }
