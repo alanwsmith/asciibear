@@ -42,8 +42,7 @@ const machine = createMachine({
     },
     alive: {
       type: 'parallel',
-      states: {  
-
+      states: {
         mousing: {
           initial: 'mouseNotMoving',
           states: {
@@ -52,7 +51,7 @@ const machine = createMachine({
               entry: [
                 assign({
                   isMousing: false,
-                  isMousingBuffer: 0
+                  isMousingBuffer: 0,
                 }),
               ],
             },
@@ -258,9 +257,8 @@ const machine = createMachine({
                         return context.pointing
                       }
                     } else if (context.isMousing) {
-                      return "looking"
-                    }
-                    else {
+                      return 'looking'
+                    } else {
                       return 'forward'
                     }
                   },
@@ -337,15 +335,17 @@ const machine = createMachine({
             mouse_pick: {
               entry: [
                 assign({
-              lastActiveMouse: (context) => {
-                if (context.lastActiveMouse === null) {
-                  return pickLayer('mouse-active')
-                } else if (context.countdown_mouse === 0) {
-                  return pickLayer('mouse-active')
-                } else {
-                  return context.lastActiveMouse
-                }
-              },})],
+                  lastActiveMouse: (context) => {
+                    if (context.lastActiveMouse === null) {
+                      return pickLayer('mouse-active')
+                    } else if (context.countdown_mouse === 0) {
+                      return pickLayer('mouse-active')
+                    } else {
+                      return context.lastActiveMouse
+                    }
+                  },
+                }),
+              ],
               after: { target: 'mouse_switch' },
             },
             mouse_switch: {
@@ -473,7 +473,7 @@ actor.subscribe((state) => {
               row.forEach((pixel, pIndex) => {
                 if (pixel.char !== '') {
                   theGrid[rIndex][pIndex].classList = ''
-                  theGrid[rIndex][pIndex].classList.add("pixel")
+                  theGrid[rIndex][pIndex].classList.add('pixel')
                   theGrid[rIndex][pIndex].innerText = pixel.char
                   theGrid[rIndex][pIndex].classList.add(layer.layerType)
                 }
@@ -493,8 +493,6 @@ ws.onopen = (event) => {
   console.log(new Date())
 }
 
-
-
 ws.onmessage = (event) => {
   const payload = JSON.parse(event.data)
   if (payload.key === 'dB') {
@@ -505,11 +503,18 @@ ws.onmessage = (event) => {
     actor.send({ type: 'STARTTYPING' })
   } else if (payload.key === 'mousemove') {
     actor.send({ type: 'STARTMOUSING' })
-  } else if (payload.key === 'bearbg') {
+  } else if (payload.key === 'bearbody') {
     console.log(payload)
+    const newStyleSheet = document.createElement('style')
+    const newStyleText = document.createTextNode(
+      `.forward-shoulders-base, .looking-shoulders-base {
+      color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
+    }`
+    )
+    newStyleSheet.appendChild(newStyleText)
+    document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'beareyes') {
-    console.log(payload)
-    const newStyleSheet = document.createElement("style")
+    const newStyleSheet = document.createElement('style')
     const newStyleText = document.createTextNode(
       `.looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
         color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
@@ -518,10 +523,18 @@ ws.onmessage = (event) => {
     newStyleSheet.appendChild(newStyleText)
     document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'bearhead') {
-    console.log(payload)
-    const newStyleSheet = document.createElement("style")
+    const newStyleSheet = document.createElement('style')
     const newStyleText = document.createTextNode(
-      `.forward-head-base, .looking-head-base {
+      `.forward-head-base, .looking-head-base, .looking-snout-base, .looking-mouth-closed, .looking-mouth-talking, .forward-snout-up, .forward-snout-down, .forward-mouth-closed, .forward-mouth-talking, .typing-mouth-closed, .typing-mouth-talking {
+        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
+      }`
+    )
+    newStyleSheet.appendChild(newStyleText)
+    document.head.appendChild(newStyleSheet)
+  } else if (payload.key === 'bearkeys') {
+    const newStyleSheet = document.createElement('style')
+    const newStyleText = document.createTextNode(
+      `.keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .mouse-active {
         color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
       }`
     )

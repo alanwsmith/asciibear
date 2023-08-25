@@ -154,15 +154,6 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "key", content = "value", rename_all = "lowercase")]
-pub enum TwitchCommand {
-    BearHead(Color),
-    BearEyes(Color),
-    BearBgColor(Color),
-    None,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -192,15 +183,36 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
     join_handle.await.unwrap();
 }
 
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
+pub enum TwitchCommand {
+    BearBody(Color),
+    BearHead(Color),
+    BearEyes(Color),
+    BearKeys(Color),
+    // BearBgColor(Color),
+    None,
+}
+
 fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
     let (source, cmd) = opt(
         alt((
-            twitch_bear_head, 
+            twitch_bear_body, 
+            twitch_bear_head,
+            twitch_bear_keys, 
             twitch_bear_eyes, 
-            twitch_bearbg_color
+            // twitch_bearbg_color
         ))
         )(source)?;
     Ok((source, cmd))
+}
+
+
+fn twitch_bear_body(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!body ")(source)?;
+    let (source, color) = hex_color(source)?;
+    Ok((source, TwitchCommand::BearBody(color)))
 }
 
 fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
@@ -209,17 +221,25 @@ fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
     Ok((source, TwitchCommand::BearHead(color)))
 }
 
+fn twitch_bear_keys(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!keys ")(source)?;
+    let (source, color) = hex_color(source)?;
+    Ok((source, TwitchCommand::BearKeys(color)))
+}
+
 fn twitch_bear_eyes(source: &str) -> IResult<&str, TwitchCommand> {
     let (source, _) = tag("!eyes ")(source)?;
     let (source, color) = hex_color(source)?;
     Ok((source, TwitchCommand::BearEyes(color)))
 }
 
-fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!bearbg ")(source)?;
-    let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearBgColor(color)))
-}
+
+
+// fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, _) = tag("!bearbg ")(source)?;
+//     let (source, color) = hex_color(source)?;
+//     Ok((source, TwitchCommand::BearBgColor(color)))
+// }
 
 fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
     u8::from_str_radix(input, 16)
