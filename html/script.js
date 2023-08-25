@@ -401,7 +401,7 @@ const machine = createMachine({
                       newLayers.push(context.lastActiveKeyboard)
                       //newLayers.push(pickLayer('keyboard-active'))
                     } else {
-                      newLayers.push(pickLayer('keyboard-inactive'))
+                      newLayers.push(pickLayer('keyboard-hottub-inactive'))
                     }
                     return newLayers
                   },
