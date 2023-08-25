@@ -25,12 +25,14 @@ const machine = createMachine({
     countdown_pointing: 0,
     countdown_shoulders: 0,
     countdown_snout: 0,
+    countdown_water: 0,
     isMousing: false,
     isMousingBuffer: 0,
     isTalking: false,
     isTyping: false,
     lastActiveKeyboard: null,
     lastActiveMouse: null,
+    lastWater: null,
     pointing: 'forward',
     visibleLayers: [],
   },
@@ -187,11 +189,11 @@ const machine = createMachine({
                     if (context.countdown_keyboard === 0) {
                       const randNum = Math.floor(Math.random() * 10)
                       if (randNum > 9) {
-                        return 7
-                      } else if (randNum > 7) {
-                        return 5
-                      } else {
                         return 3
+                      } else if (randNum > 7) {
+                        return 2
+                      } else {
+                        return 1
                       }
                     } else {
                       return context.countdown_keyboard - 1
@@ -208,11 +210,11 @@ const machine = createMachine({
                     if (context.countdown_mouse === 0) {
                       const randNum = Math.floor(Math.random() * 10)
                       if (randNum > 9) {
-                        return 1
+                        return 4
                       } else if (randNum > 7) {
-                        return 1
+                        return 3
                       } else {
-                        return 1
+                        return 2
                       }
                     } else {
                       return context.countdown_mouse - 1
@@ -243,6 +245,27 @@ const machine = createMachine({
               after: { target: 'snout_countdown' },
             },
             snout_countdown: {
+              after: { target: 'water_countdown' },
+            },
+            water_countdown: {
+              entry: [
+                assign({
+                  countdown_water: (context) => {
+                    if (context.countdown_water === 0) {
+                      const randNum = Math.floor(Math.random() * 10)
+                      if (randNum > 9) {
+                        return 2
+                      } else if (randNum > 7) {
+                        return 2
+                      } else {
+                        return 2
+                      }
+                    } else {
+                      return context.countdown_water - 1
+                    }
+                  },
+                }),
+              ],
               after: { target: 'pointing_switch' },
             },
             pointing_switch: {
@@ -313,7 +336,7 @@ const machine = createMachine({
                   },
                 }),
               ],
-              after: { target: 'keyboard_pick' },
+              after: { target: 'hottub_keyboard_pick' },
             },
             keyboard_pick: {
               entry: [
@@ -336,6 +359,32 @@ const machine = createMachine({
                       } else {
                         return context.lastActiveKeyboard
                         //return pickLayer('keyboard-active')
+                      }
+                    }
+                  },
+                }),
+              ],
+              after: { target: 'keyboard_switch' },
+            },
+            hottub_keyboard_pick: {
+              entry: [
+                assign({
+                  lastActiveKeyboard: (context) => {
+                    if (context.isMousing) {
+                      if (context.lastActiveKeyboard === null) {
+                        return pickLayer('hottub-keyboard-active')
+                      } else if (context.countdown_keyboard === 0) {
+                        return pickLayer('hottub-keyboard-active')
+                      } else {
+                        return context.lastActiveKeyboard
+                      }
+                    } else {
+                      if (context.lastActiveKeyboard === null) {
+                        return pickLayer('hottub-keyboard-active')
+                      } else if (context.countdown_keyboard === 0) {
+                        return pickLayer('hottub-keyboard-active')
+                      } else {
+                        return context.lastActiveKeyboard
                       }
                     }
                   },
@@ -458,8 +507,49 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'water_pick' },
+            },
+            water_pick: {
+              entry: [
+                assign({
+                  lastWater: (context) => {
+                    if (context.lastWater === null) {
+                      return pickLayer('hottub-water')
+                    } else if (context.countdown_water === 0) {
+                      return pickLayer('hottub-water')
+                    } else {
+                      return context.lastWater
+                    }
+                  },
+                }),
+              ],
+              after: { target: 'water_switch' },
+            },
+            water_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    newLayers.push(context.lastWater)
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'hottub_switch' },
+            },
+            hottub_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    newLayers.push(pickLayer("hottub-border"))
+                    return newLayers
+                  },
+                }),
+              ],
               after: { target: 'delay' },
             },
+
             delay: {
               entry: [
                 // log((context, e) => `VL: ${context.isTyping}`),
@@ -468,7 +558,7 @@ const machine = createMachine({
               after: [
                 {
                   delay: () => {
-                    return Math.floor(Math.random() * 20) + 30
+                    return Math.floor(Math.random() * 30) + 80
                   },
                   target: 'start_update',
                 },

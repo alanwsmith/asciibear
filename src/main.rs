@@ -26,8 +26,8 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 // use tower_http::services::ServeDir;
 // use tower_livereload::LiveReloadLayer;
-use asciibear::connection::Connection;
-use asciibear::screen_capture::screen_capture;
+// use asciibear::connection::Connection;
+// use asciibear::screen_capture::screen_capture;
 use axum::response::Html;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
@@ -35,10 +35,10 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 // use std::fmt::Display;
 // use std::future::Future;
-use tokio::net::TcpListener;
+// use tokio::net::TcpListener;
 // use tokio::sync::mpsc::UnboundedSender;
-use asciibear::helpers::spawn;
-use asciibear::stream_manager::start;
+// use asciibear::helpers::spawn;
+// use asciibear::stream_manager::start;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -51,8 +51,10 @@ async fn main() {
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
-    let _rtmp_server = tokio::spawn(rtmp_server());
-    let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
+    // THESE WORK BUT ARE OFF RIGHT NOW UNTIL THE
+    // WEB PAGE IS SETUP TO DEAL WITH THEM
+    // let _rtmp_server = tokio::spawn(rtmp_server());
+    // let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
         //.nest_service("/", ServeDir::new("html"))
@@ -263,24 +265,20 @@ fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
 }
 
-async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let manager_sender = start();
-
-    println!("Listening for connections on port 1935");
-    let listener = TcpListener::bind("0.0.0.0:1935").await?;
-    let mut current_id = 0;
-
-    loop {
-        let (stream, connection_info) = listener.accept().await?;
-
-        let connection = Connection::new(current_id, manager_sender.clone());
-        println!(
-            "Connection {}: Connection received from {}",
-            current_id,
-            connection_info.ip()
-        );
-
-        spawn(connection.start_handshake(stream));
-        current_id = current_id + 1;
-    }
-}
+// async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+//     let manager_sender = start();
+//     println!("Listening for connections on port 1935");
+//     let listener = TcpListener::bind("0.0.0.0:1935").await?;
+//     let mut current_id = 0;
+//     loop {
+//         let (stream, connection_info) = listener.accept().await?;
+//         let connection = Connection::new(current_id, manager_sender.clone());
+//         println!(
+//             "Connection {}: Connection received from {}",
+//             current_id,
+//             connection_info.ip()
+//         );
+//         spawn(connection.start_handshake(stream));
+//         current_id = current_id + 1;
+//     }
+// }
