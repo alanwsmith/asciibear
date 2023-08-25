@@ -29,6 +29,7 @@ const machine = createMachine({
     isMousingBuffer: 0,
     isTalking: false,
     isTyping: false,
+    lastActiveKeyboard: null,
     lastActiveMouse: null,
     pointing: 'forward',
     visibleLayers: [],
@@ -183,17 +184,17 @@ const machine = createMachine({
               entry: [
                 assign({
                   countdown_keyboard: (context) => {
-                    if (context.countdown_pointing === 0) {
+                    if (context.countdown_keyboard === 0) {
                       const randNum = Math.floor(Math.random() * 10)
                       if (randNum > 9) {
-                        return 5
+                        return 7
                       } else if (randNum > 7) {
-                        return 4
+                        return 5
                       } else {
-                        return 2
+                        return 3
                       }
                     } else {
-                      return context.countdown_pointing - 1
+                      return context.countdown_keyboard - 1
                     }
                   },
                 }),
@@ -207,9 +208,9 @@ const machine = createMachine({
                     if (context.countdown_mouse === 0) {
                       const randNum = Math.floor(Math.random() * 10)
                       if (randNum > 9) {
-                        return 3
+                        return 1
                       } else if (randNum > 7) {
-                        return 2
+                        return 1
                       } else {
                         return 1
                       }
@@ -312,6 +313,34 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'keyboard_pick' },
+            },
+            keyboard_pick: {
+              entry: [
+                assign({
+                  lastActiveKeyboard: (context) => {
+                    if (context.isMousing) {
+                      if (context.lastActiveKeyboard === null) {
+                        return pickLayer('mouse-keyboard')
+                      } else if (context.countdown_keyboard === 0) {
+                        return pickLayer('mouse-keyboard')
+                      } else {
+                        return context.lastActiveKeyboard
+                        //return pickLayer('mouse-keyboard')
+                      }
+                    } else {
+                      if (context.lastActiveKeyboard === null) {
+                        return pickLayer('keyboard-active')
+                      } else if (context.countdown_keyboard === 0) {
+                        return pickLayer('keyboard-active')
+                      } else {
+                        return context.lastActiveKeyboard
+                        //return pickLayer('keyboard-active')
+                      }
+                    }
+                  },
+                }),
+              ],
               after: { target: 'keyboard_switch' },
             },
             keyboard_switch: {
@@ -319,10 +348,9 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.isMousing) {
-                      newLayers.push(pickLayer('mouse-keyboard'))
-                    } else if (context.isTyping) {
-                      newLayers.push(pickLayer('keyboard-active'))
+                    if (context.isTyping) {
+                      newLayers.push(context.lastActiveKeyboard)
+                      //newLayers.push(pickLayer('keyboard-active'))
                     } else {
                       newLayers.push(pickLayer('keyboard-inactive'))
                     }
@@ -440,7 +468,7 @@ const machine = createMachine({
               after: [
                 {
                   delay: () => {
-                    return Math.floor(Math.random() * 80) + 60
+                    return Math.floor(Math.random() * 20) + 30
                   },
                   target: 'start_update',
                 },
