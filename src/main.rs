@@ -59,7 +59,6 @@ async fn main() {
         .route("/", get(index))
         .route("/script.js", get(scriptjs))
         .route("/xstate.js", get(xstate))
-        .route("/test-position.html", get(position))
         .route("/bears.json", get(bears))
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
@@ -80,10 +79,6 @@ async fn scriptjs() -> Html<&'static str> {
 
 async fn xstate() -> Html<&'static str> {
     Html(std::include_str!("../html/xstate.js"))
-}
-
-async fn position() -> Html<&'static str> {
-    Html(std::include_str!("../html/test-position.html"))
 }
 
 async fn bears() -> Html<&'static str> {

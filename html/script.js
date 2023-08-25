@@ -245,18 +245,6 @@ const machine = createMachine({
             snout_countdown: {
               after: { target: 'pointing_switch' },
             },
-            // desk_switch: {
-            //   entry: [
-            //     assign({
-            //       visibleLayers: (context) => {
-            //         const newLayers = [...context.visibleLayers]
-            //         newLayers.push(pickLayer('desk-border'))
-            //         return newLayers
-            //       },
-            //     }),
-            //   ],
-            //   after: { target: 'pointing_switch' },
-            // },
             pointing_switch: {
               entry: [
                 assign({
@@ -444,7 +432,6 @@ const machine = createMachine({
               ],
               after: { target: 'delay' },
             },
-
             delay: {
               entry: [
                 // log((context, e) => `VL: ${context.isTyping}`),
@@ -485,7 +472,10 @@ actor.subscribe((state) => {
             layer.rows.forEach((row, rIndex) => {
               row.forEach((pixel, pIndex) => {
                 if (pixel.char !== '') {
+                  theGrid[rIndex][pIndex].classList = ''
+                  theGrid[rIndex][pIndex].classList.add("pixel")
                   theGrid[rIndex][pIndex].innerText = pixel.char
+                  theGrid[rIndex][pIndex].classList.add(layer.layerType)
                 }
               })
             })
@@ -519,6 +509,16 @@ ws.onmessage = (event) => {
     console.log(payload)
   } else if (payload.key === 'bearhead') {
     console.log(payload)
+    const newStyleSheet = document.createElement("style")
+    const newStyleText = document.createTextNode(
+      `
+      .forward-head-base, .looking-head-base {
+        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
+      }`
+    )
+    newStyleSheet.appendChild(newStyleText)
+    document.head.appendChild(newStyleSheet)
+    
   } else if (payload.key === 'screen_position') {
   }
 }
