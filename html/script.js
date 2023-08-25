@@ -170,7 +170,7 @@ const machine = createMachine({
                 assign({
                   countdown_eyes: (context) => {
                     if (context.countdown_eyes === 0) {
-                      return 14
+                      return Math.floor(Math.random() * 30) + 18
                     } else {
                       return context.countdown_eyes - 1
                     }
@@ -503,6 +503,8 @@ ws.onopen = (event) => {
   console.log(new Date())
 }
 
+
+
 ws.onmessage = (event) => {
   const payload = JSON.parse(event.data)
   if (payload.key === 'dB') {
@@ -514,7 +516,9 @@ ws.onmessage = (event) => {
   } else if (payload.key === 'mousemove') {
     actor.send({ type: 'STARTMOUSING' })
   } else if (payload.key === 'bearbgcolor') {
-  } else if (payload.key === 'bearcolor') {
+    console.log(payload)
+  } else if (payload.key === 'bearhead') {
+    console.log(payload)
   } else if (payload.key === 'screen_position') {
   }
 }

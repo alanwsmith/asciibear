@@ -161,7 +161,7 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
-    BearColor(Color),
+    BearHead(Color),
     BearBgColor(Color),
     None,
 }
@@ -181,7 +181,7 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    // dbg!(&payload);
+                    dbg!(&payload);
                     if let Some(msg) = read_twitch(payload.message_text.as_str()).unwrap().1 {
                         let shipment = serde_json::to_string(&msg).unwrap();
                         // dbg!(&shipment);
@@ -197,14 +197,19 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 }
 
 fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
-    let (source, cmd) = opt(alt((twitch_bear_color, twitch_bearbg_color)))(source)?;
+    let (source, cmd) = opt(
+        alt((
+            twitch_bear_head, 
+            twitch_bearbg_color
+        ))
+        )(source)?;
     Ok((source, cmd))
 }
 
-fn twitch_bear_color(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!bear ")(source)?;
+fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag("!head ")(source)?;
     let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearColor(color)))
+    Ok((source, TwitchCommand::BearHead(color)))
 }
 
 fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {
