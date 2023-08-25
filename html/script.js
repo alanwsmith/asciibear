@@ -75,7 +75,7 @@ const machine = createMachine({
               after: [
                 {
                   delay: () => {
-                    return 250
+                    return 450
                   },
                   target: 'mouseNotMoving',
                 },
@@ -187,11 +187,11 @@ const machine = createMachine({
                     if (context.countdown_pointing === 0) {
                       const randNum = Math.floor(Math.random() * 10)
                       if (randNum > 9) {
-                        return 3
+                        return 5
                       } else if (randNum > 7) {
-                        return 2
+                        return 4
                       } else {
-                        return 1
+                        return 2
                       }
                     } else {
                       return context.countdown_pointing - 1
@@ -245,6 +245,18 @@ const machine = createMachine({
             snout_countdown: {
               after: { target: 'pointing_switch' },
             },
+            // desk_switch: {
+            //   entry: [
+            //     assign({
+            //       visibleLayers: (context) => {
+            //         const newLayers = [...context.visibleLayers]
+            //         newLayers.push(pickLayer('desk-border'))
+            //         return newLayers
+            //       },
+            //     }),
+            //   ],
+            //   after: { target: 'pointing_switch' },
+            // },
             pointing_switch: {
               entry: [
                 assign({
