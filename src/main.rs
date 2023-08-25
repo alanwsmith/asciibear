@@ -24,12 +24,21 @@ use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tower_http::services::ServeDir;
-use tower_livereload::LiveReloadLayer;
+// use tower_http::services::ServeDir;
+// use tower_livereload::LiveReloadLayer;
+use asciibear::connection::Connection;
+use asciibear::screen_capture::screen_capture;
+use axum::response::Html;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
+// use std::fmt::Display;
+// use std::future::Future;
+use tokio::net::TcpListener;
+// use tokio::sync::mpsc::UnboundedSender;
+use asciibear::helpers::spawn;
+use asciibear::stream_manager::start;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -42,16 +51,43 @@ async fn main() {
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
     let _mouse_watcher_handle = tokio::spawn(mouse_watcher(tx.clone()));
     let _twitch_handle = tokio::spawn(twitch_listener(tx.clone()));
+    let _rtmp_server = tokio::spawn(rtmp_server());
+    let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
-        .nest_service("/", ServeDir::new("html"))
+        //.nest_service("/", ServeDir::new("html"))
+        .route("/", get(index))
+        .route("/script.js", get(scriptjs))
+        .route("/xstate.js", get(xstate))
+        .route("/test-position.html", get(position))
+        .route("/bears.json", get(bears))
         .route("/ws", get(page_websocket_handler))
-        .layer(LiveReloadLayer::new())
+        // .layer(LiveReloadLayer::new())
         .with_state(app_state);
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5757));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3302));
     let _ = axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await;
+}
+
+async fn index() -> Html<&'static str> {
+    Html(std::include_str!("../html/index.html"))
+}
+
+async fn scriptjs() -> Html<&'static str> {
+    Html(std::include_str!("../html/script.js"))
+}
+
+async fn xstate() -> Html<&'static str> {
+    Html(std::include_str!("../html/xstate.js"))
+}
+
+async fn position() -> Html<&'static str> {
+    Html(std::include_str!("../html/test-position.html"))
+}
+
+async fn bears() -> Html<&'static str> {
+    Html(std::include_str!("../html/bears.json"))
 }
 
 async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
@@ -197,4 +233,26 @@ fn hex_color(input: &str) -> IResult<&str, Color> {
 
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
+}
+
+async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let manager_sender = start();
+
+    println!("Listening for connections on port 1935");
+    let listener = TcpListener::bind("0.0.0.0:1935").await?;
+    let mut current_id = 0;
+
+    loop {
+        let (stream, connection_info) = listener.accept().await?;
+
+        let connection = Connection::new(current_id, manager_sender.clone());
+        println!(
+            "Connection {}: Connection received from {}",
+            current_id,
+            connection_info.ip()
+        );
+
+        spawn(connection.start_handshake(stream));
+        current_id = current_id + 1;
+    }
 }
