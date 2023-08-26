@@ -232,7 +232,7 @@ const machine = createMachine({
                 assign({
                   countdown_pointing: (context) => {
                     if (context.countdown_pointing === 0) {
-                      return Math.floor(Math.random() * 7) +7
+                      return Math.floor(Math.random() * 7) + 7
                     } else {
                       return context.countdown_pointing - 1
                     }
@@ -281,6 +281,19 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'hottub_switch' },
+            },
+            hottub_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    newLayers.push(pickLayer("hottub-border-mat"))
+                    newLayers.push(pickLayer("hottub-border"))
+                    return newLayers
+                  },
+                }),
+              ],
               after: { target: 'eyes_switch' },
             },
             eyes_switch: {
@@ -321,8 +334,10 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
+                      newLayers.push(pickLayer('looking-head-mat'))
                       newLayers.push(pickLayer('looking-head-base'))
                     } else {
+                      newLayers.push(pickLayer('forward-head-mat'))
                       newLayers.push(pickLayer('forward-head-base'))
                     }
                     return newLayers
@@ -491,9 +506,9 @@ const machine = createMachine({
                       newLayers.push(pickLayer('looking-snout-base'))
                     } else {
                       if (context.isTyping) {
-                      newLayers.push(pickLayer('forward-snout-down'))
+                        newLayers.push(pickLayer('forward-snout-down'))
                       } else {
-                      newLayers.push(pickLayer('forward-snout-up'))
+                        newLayers.push(pickLayer('forward-snout-up'))
                       }
                     }
                     return newLayers
@@ -510,7 +525,7 @@ const machine = createMachine({
                       return pickLayer('hottub-water')
                     } else if (context.countdown_water === 0) {
                       let newWater = null
-                      for (let i=0; i<50; i++) {
+                      for (let i = 0; i < 50; i++) {
                         newWater = pickLayer('hottub-water')
                         if (newWater !== context.lastWater) {
                           break
@@ -535,14 +550,14 @@ const machine = createMachine({
                   },
                 }),
               ],
-              after: { target: 'hottub_switch' },
+              after: { target: 'text_switch' },
             },
-            hottub_switch: {
+            text_switch: {
               entry: [
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    newLayers.push(pickLayer("hottub-border"))
+                    newLayers.push(pickLayer("text-canvas"))
                     return newLayers
                   },
                 }),
@@ -661,10 +676,10 @@ ws.onmessage = (event) => {
     console.log(payload)
     const chars = payload.value.split("")
     for (let i = 0; i < chars.length; i++) {
-      layers[0].rows[0][20 + i].char = chars[i]
+      layers[0].rows[2][20 + i].char = chars[i]
     }
   } else if (payload.key === 'screen_position') {
-  }   else if (payload.key === 'test') {
+  } else if (payload.key === 'test') {
     console.log(payload)
   }
 }
@@ -704,6 +719,50 @@ const make_grid = (data) => {
   }
 }
 
+
+const make_speech_grid = () => {
+  let rows = 60
+  let cols = 70
+
+  const newT = document.createElement('table')
+  newT.id = 'speechBubbleTable'
+  for (let r = 0; r <= rows; r++) {
+    const newTr = document.createElement('tr')
+    for (let c = 0; c <= cols; c++) {
+      const newTd = document.createElement('td')
+      newTd.classList.add('pixel')
+      newTd.innerHTML = '.'
+      newTr.appendChild(newTd)
+    }
+    newT.appendChild(newTr)
+  }
+  speechBubble.appendChild(newT)
+
+}
+
+const make_speech_grid2 = () => {
+
+  let rows = 60
+  let cols = 70
+
+  const newT = document.createElement('table')
+  newT.id = 'speechBubbleTable2'
+  for (let r = 0; r <= rows; r++) {
+    const newTr = document.createElement('tr')
+    for (let c = 0; c <= cols; c++) {
+      const newTd = document.createElement('td')
+      newTd.classList.add('pixel')
+      newTd.innerHTML = '.'
+      newTr.appendChild(newTd)
+    }
+    newT.appendChild(newTr)
+  }
+  speechBubble2.appendChild(newT)
+}
+
+
+
+
 const init = () => {
   const req = new Request('bears.json')
   fetch(req)
@@ -712,6 +771,8 @@ const init = () => {
     })
     .then((data) => {
       make_grid(data)
+      make_speech_grid(data)
+      make_speech_grid2(data)
       layers = data.layers
       actor.send({ type: 'KICKOFF' })
     })
