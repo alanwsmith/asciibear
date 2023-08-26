@@ -472,9 +472,9 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
-                      newLayers.push(2)
+                      newLayers.push(pickLayer('looking-shoulders-base'))
                     } else {
-                      newLayers.push(1)
+                      newLayers.push(pickLayer('forward-shoulders-base'))
                     }
                     return newLayers
                   },
@@ -488,12 +488,12 @@ const machine = createMachine({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
                     if (context.pointing === 'looking') {
-                      newLayers.push(6)
+                      newLayers.push(pickLayer('looking-snout-base'))
                     } else {
                       if (context.isTyping) {
-                        newLayers.push(17)
+                      newLayers.push(pickLayer('forward-snout-down'))
                       } else {
-                        newLayers.push(16)
+                      newLayers.push(pickLayer('forward-snout-up'))
                       }
                     }
                     return newLayers
@@ -659,6 +659,10 @@ ws.onmessage = (event) => {
     document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'sayhi') {
     console.log(payload)
+    const chars = payload.value.split("")
+    for (let i = 0; i < chars.length; i++) {
+      layers[0].rows[0][20 + i].char = chars[i]
+    }
   } else if (payload.key === 'screen_position') {
   }   else if (payload.key === 'test') {
     console.log(payload)

@@ -194,7 +194,7 @@ pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> 
             TwitchCommand::None => None,
             TwitchCommand::SayHi => {
                 tbs.key = Some("sayhi".to_string());
-                tbs.value = Some(format!("Hi there {}", payload.clone().sender.name));
+                tbs.value = Some(format!("Hi {}!", payload.clone().sender.name));
                 Some(serde_json::to_string(&tbs).unwrap())
             }
         },
