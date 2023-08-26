@@ -430,7 +430,7 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    if (context.isMousing) {
+                    if (context.isMousing && !context.isTyping) {
                       newLayers.push(context.lastActiveMouse)
                     } else {
                       newLayers.push(pickLayer('mouse-inactive'))
@@ -516,7 +516,14 @@ const machine = createMachine({
                     if (context.lastWater === null) {
                       return pickLayer('hottub-water')
                     } else if (context.countdown_water === 0) {
-                      return pickLayer('hottub-water')
+                      let newWater = null
+                      for (let i=0; i<50; i++) {
+                        newWater = pickLayer('hottub-water')
+                        if (newWater !== context.lastWater) {
+                          break
+                        }
+                      }
+                      return newWater
                     } else {
                       return context.lastWater
                     }
