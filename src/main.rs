@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use axum::extract::ws::Message;
 use axum::extract::ws::WebSocket;
 use axum::extract::ws::WebSocketUpgrade;
@@ -155,11 +156,62 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// pub struct Color {
+//     pub red: u8,
+//     pub green: u8,
+//     pub blue: u8,
+// }
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Color {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
+pub struct TwitchBearShipment {
+    key: Option<String>,
+    value: Option<String>,
+    // sender: Option<String>,
+}
+
+impl TwitchBearShipment {
+    pub fn new() -> TwitchBearShipment {
+        TwitchBearShipment {
+            key: None,
+            value: None,
+            // sender: None,
+        }
+    }
+}
+
+pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> Option<String> {
+    let stuff = parse_incoming_twitch_message(payload.clone().message_text.as_str())
+        .unwrap()
+        .1;
+
+    let mut tbs = TwitchBearShipment::new();
+    // tbs.sender = Some(payload.clone().sender.name);
+
+    match stuff {
+        None => None,
+        Some(junk) => match junk {
+            TwitchCommand::None => None,
+            TwitchCommand::SayHi => {
+                tbs.key = Some("sayhi".to_string());
+                tbs.value = Some(format!("Hi there {}", payload.clone().sender.name));
+                Some(serde_json::to_string(&tbs).unwrap())
+            }
+        },
+    }
+}
+
+pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
+    let (source, cmd) = opt(alt((
+        // twitch_bear_body,
+        // twitch_bear_head,
+        // twitch_bear_keys,
+        // twitch_bear_eyes,
+        // twitch_bearbg_color
+        twitch_say_hi,
+        twitch_say_hi,
+    )))(source)?;
+    Ok((source, cmd))
 }
 
 async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
@@ -170,11 +222,8 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    dbg!(&payload);
-                    if let Some(msg) = read_twitch(payload.message_text.as_str()).unwrap().1 {
-                        let shipment = serde_json::to_string(&msg).unwrap();
-                        // dbg!(&shipment);
-                        let _ = tx.send(shipment);
+                    if let Some(msg) = assemble_twitch_message(payload) {
+                        let _ = tx.send(msg);
                     }
                 }
                 _ => {}
@@ -185,57 +234,62 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
     join_handle.await.unwrap();
 }
 
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
-    BearBody(Color),
-    BearHead(Color),
-    BearEyes(Color),
-    BearKeys(Color),
+    // BearBody(Color),
+    // BearHead(Color),
+    // BearEyes(Color),
+    // BearKeys(Color),
     // BearBgColor(Color),
+    SayHi,
     None,
 }
 
-fn read_twitch(source: &str) -> IResult<&str, Option<TwitchCommand>> {
-    let (source, cmd) = opt(
-        alt((
-            twitch_bear_body, 
-            twitch_bear_head,
-            twitch_bear_keys, 
-            twitch_bear_eyes, 
-            // twitch_bearbg_color
-        ))
-        )(source)?;
+fn read_twitch(
+    source: &str,
+    payload: twitch_irc::message::PrivmsgMessage,
+) -> IResult<&str, Option<TwitchCommand>> {
+    dbg!(payload);
+    let (source, cmd) = opt(alt((
+        // twitch_bear_body,
+        // twitch_bear_head,
+        // twitch_bear_keys,
+        // twitch_bear_eyes,
+        // twitch_bearbg_color
+        twitch_say_hi,
+        twitch_say_hi,
+    )))(source)?;
     Ok((source, cmd))
 }
 
-
-fn twitch_bear_body(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!body ")(source)?;
-    let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearBody(color)))
+fn twitch_say_hi(source: &str) -> IResult<&str, TwitchCommand> {
+    Ok((source, TwitchCommand::SayHi))
 }
 
-fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!head ")(source)?;
-    let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearHead(color)))
-}
+// fn twitch_bear_body(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, _) = tag("!body ")(source)?;
+//     let (source, color) = hex_color(source)?;
+//     Ok((source, TwitchCommand::BearBody(color)))
+// }
 
-fn twitch_bear_keys(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!keys ")(source)?;
-    let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearKeys(color)))
-}
+// fn twitch_bear_head(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, _) = tag("!head ")(source)?;
+//     let (source, color) = hex_color(source)?;
+//     Ok((source, TwitchCommand::BearHead(color)))
+// }
 
-fn twitch_bear_eyes(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag("!eyes ")(source)?;
-    let (source, color) = hex_color(source)?;
-    Ok((source, TwitchCommand::BearEyes(color)))
-}
+// fn twitch_bear_keys(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, _) = tag("!keys ")(source)?;
+//     let (source, color) = hex_color(source)?;
+//     Ok((source, TwitchCommand::BearKeys(color)))
+// }
 
-
+// fn twitch_bear_eyes(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, _) = tag("!eyes ")(source)?;
+//     let (source, color) = hex_color(source)?;
+//     Ok((source, TwitchCommand::BearEyes(color)))
+// }
 
 // fn twitch_bearbg_color(source: &str) -> IResult<&str, TwitchCommand> {
 //     let (source, _) = tag("!bearbg ")(source)?;
@@ -243,23 +297,23 @@ fn twitch_bear_eyes(source: &str) -> IResult<&str, TwitchCommand> {
 //     Ok((source, TwitchCommand::BearBgColor(color)))
 // }
 
-fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
-    u8::from_str_radix(input, 16)
-}
+// fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
+//     u8::from_str_radix(input, 16)
+// }
 
-fn is_hex_digit(c: char) -> bool {
-    c.is_digit(16)
-}
+// fn is_hex_digit(c: char) -> bool {
+//     c.is_digit(16)
+// }
 
-fn hex_primary(input: &str) -> IResult<&str, u8> {
-    map_res(take_while_m_n(2, 2, is_hex_digit), from_hex).parse(input)
-}
+// fn hex_primary(input: &str) -> IResult<&str, u8> {
+//     map_res(take_while_m_n(2, 2, is_hex_digit), from_hex).parse(input)
+// }
 
-fn hex_color(input: &str) -> IResult<&str, Color> {
-    let (input, _) = tag("#")(input)?;
-    let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
-    Ok((input, Color { red, green, blue }))
-}
+// fn hex_color(input: &str) -> IResult<&str, Color> {
+//     let (input, _) = tag("#")(input)?;
+//     let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
+//     Ok((input, Color { red, green, blue }))
+// }
 
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);

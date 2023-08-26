@@ -232,7 +232,7 @@ const machine = createMachine({
                 assign({
                   countdown_pointing: (context) => {
                     if (context.countdown_pointing === 0) {
-                      return 12
+                      return Math.floor(Math.random() * 7) +7
                     } else {
                       return context.countdown_pointing - 1
                     }
@@ -252,14 +252,7 @@ const machine = createMachine({
                 assign({
                   countdown_water: (context) => {
                     if (context.countdown_water === 0) {
-                      const randNum = Math.floor(Math.random() * 10)
-                      if (randNum > 9) {
-                        return 2
-                      } else if (randNum > 7) {
-                        return 2
-                      } else {
-                        return 2
-                      }
+                      return 3
                     } else {
                       return context.countdown_water - 1
                     }
@@ -556,7 +549,6 @@ const machine = createMachine({
               ],
               after: { target: 'delay' },
             },
-
             delay: {
               entry: [
                 // log((context, e) => `VL: ${context.isTyping}`),
@@ -665,7 +657,11 @@ ws.onmessage = (event) => {
     )
     newStyleSheet.appendChild(newStyleText)
     document.head.appendChild(newStyleSheet)
+  } else if (payload.key === 'sayhi') {
+    console.log(payload)
   } else if (payload.key === 'screen_position') {
+  }   else if (payload.key === 'test') {
+    console.log(payload)
   }
 }
 
