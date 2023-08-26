@@ -288,14 +288,35 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    newLayers.push(pickLayer("hottub-border-mat"))
-                    newLayers.push(pickLayer("hottub-border"))
+                    newLayers.push(pickLayer('hottub-border-mat'))
+                    newLayers.push(pickLayer('hottub-border'))
+                    return newLayers
+                  },
+                }),
+              ],
+              after: { target: 'head_switch' },
+            },
+
+
+            head_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    if (context.pointing === 'looking') {
+                      newLayers.push(pickLayer('looking-head-mat'))
+                      newLayers.push(pickLayer('looking-head-base'))
+                    } else {
+                      newLayers.push(pickLayer('forward-head-mat'))
+                      newLayers.push(pickLayer('forward-head-base'))
+                    }
                     return newLayers
                   },
                 }),
               ],
               after: { target: 'eyes_switch' },
             },
+
             eyes_switch: {
               entry: [
                 assign({
@@ -326,26 +347,9 @@ const machine = createMachine({
                   },
                 }),
               ],
-              after: { target: 'head_switch' },
-            },
-            head_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === 'looking') {
-                      newLayers.push(pickLayer('looking-head-mat'))
-                      newLayers.push(pickLayer('looking-head-base'))
-                    } else {
-                      newLayers.push(pickLayer('forward-head-mat'))
-                      newLayers.push(pickLayer('forward-head-base'))
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
               after: { target: 'hottub_keyboard_pick' },
             },
+
             keyboard_pick: {
               entry: [
                 assign({
@@ -557,7 +561,7 @@ const machine = createMachine({
                 assign({
                   visibleLayers: (context) => {
                     const newLayers = [...context.visibleLayers]
-                    newLayers.push(pickLayer("text-canvas"))
+                    newLayers.push(pickLayer('text-canvas'))
                     return newLayers
                   },
                 }),
@@ -599,20 +603,37 @@ actor.subscribe((state) => {
             theGrid[rIndex][pIndex].innerText = ' '
           })
         })
-        layers.forEach((layer, lIndex) => {
-          if (state.context.visibleLayers.includes(lIndex)) {
-            layer.rows.forEach((row, rIndex) => {
-              row.forEach((pixel, pIndex) => {
-                if (pixel.char !== '') {
-                  theGrid[rIndex][pIndex].classList = ''
-                  theGrid[rIndex][pIndex].classList.add('pixel')
-                  theGrid[rIndex][pIndex].innerText = pixel.char
-                  theGrid[rIndex][pIndex].classList.add(layer.layerType)
-                }
-              })
+
+        state.context.visibleLayers.forEach((lIndex) => {
+          // console.log(lIndex)
+          layers[lIndex].rows.forEach((row, rIndex) => {
+            row.forEach((pixel, pIndex) => {
+              if (pixel.char !== '') {
+                theGrid[rIndex][pIndex].classList = ''
+                theGrid[rIndex][pIndex].classList.add('pixel')
+                theGrid[rIndex][pIndex].classList.add('activePixel')
+                theGrid[rIndex][pIndex].innerText = pixel.char
+                theGrid[rIndex][pIndex].classList.add(layers[lIndex].layerType)
+              }
             })
-          }
+          })
         })
+
+        // layers.forEach((layer, lIndex) => {
+        //   if (state.context.visibleLayers.includes(lIndex)) {
+        //     layer.rows.forEach((row, rIndex) => {
+        //       row.forEach((pixel, pIndex) => {
+        //         if (pixel.char !== '') {
+        //           theGrid[rIndex][pIndex].classList = ''
+        //           theGrid[rIndex][pIndex].classList.add('pixel')
+        //           theGrid[rIndex][pIndex].innerText = pixel.char
+        //           theGrid[rIndex][pIndex].classList.add(layer.layerType)
+        //         }
+        //       })
+        //     })
+        //   }
+        // })
+
       }
     })
   }
@@ -674,7 +695,7 @@ ws.onmessage = (event) => {
     document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'sayhi') {
     console.log(payload)
-    const chars = payload.value.split("")
+    const chars = payload.value.split('')
     for (let i = 0; i < chars.length; i++) {
       layers[0].rows[2][20 + i].char = chars[i]
     }
@@ -719,7 +740,6 @@ const make_grid = (data) => {
   }
 }
 
-
 const make_speech_grid = () => {
   let rows = 60
   let cols = 70
@@ -737,11 +757,9 @@ const make_speech_grid = () => {
     newT.appendChild(newTr)
   }
   speechBubble.appendChild(newT)
-
 }
 
 const make_speech_grid2 = () => {
-
   let rows = 60
   let cols = 70
 
@@ -759,9 +777,6 @@ const make_speech_grid2 = () => {
   }
   speechBubble2.appendChild(newT)
 }
-
-
-
 
 const init = () => {
   const req = new Request('bears.json')
