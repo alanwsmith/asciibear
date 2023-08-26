@@ -4,6 +4,10 @@ const { log } = actions
 const theGrid = []
 let layers = []
 
+let messageCount = 0
+let frameCount = 0
+
+
 const pickLayer = (layerType) => {
   const possibleLayers = []
   layers.forEach((layer, layerIndex) => {
@@ -591,6 +595,8 @@ const machine = createMachine({
 
 const actor = interpret(machine).start()
 
+
+
 actor.subscribe((state) => {
   if (state.context.trigger) {
     window.requestAnimationFrame(() => {
@@ -741,8 +747,8 @@ const make_grid = (data) => {
 }
 
 const make_speech_grid = () => {
-  let rows = 60
-  let cols = 70
+  let rows = 42
+  let cols = 130
 
   const newT = document.createElement('table')
   newT.id = 'speechBubbleTable'
@@ -760,8 +766,8 @@ const make_speech_grid = () => {
 }
 
 const make_speech_grid2 = () => {
-  let rows = 60
-  let cols = 70
+  let rows = 42
+  let cols = 130
 
   const newT = document.createElement('table')
   newT.id = 'speechBubbleTable2'
