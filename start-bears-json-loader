@@ -6,6 +6,7 @@
 
 tmux select-pane -T "bears.json Loader"
 cd /Users/alan/Downloads
+# watchexec -p --filter "ascii-shop.json" --fs-events create mv -- ascii-shop.json "/Users/alan/workshop/asciibear/html/bears.json"
 watchexec -p --filter "ascii-shop.json" --fs-events create mv -- ascii-shop.json "/Users/alan/workshop/asciibear/html/bears.json"
 
 
