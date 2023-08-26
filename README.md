@@ -6,7 +6,7 @@ Using the keyboard, mic, and mouse
 to make and ASCII character for 
 streaming
 
-![ASCII Bear GIF](html/images/asciibear-2023-08-04.gif)
+![ASCII Bear GIF](html/images/asciibear-2023-08-26.gif)
 
 More details here:
 
