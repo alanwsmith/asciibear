@@ -263,8 +263,24 @@ const machine = createMachine({
                   },
                 }),
               ],
+              after: { target: 'speech_bubble_switch' },
+            },
+
+            speech_bubble_switch: {
+              entry: [
+                assign({
+                  visibleLayers: (context) => {
+                    const newLayers = [...context.visibleLayers]
+                    newLayers.push(pickLayer('speech-bubble-mat'))
+                    newLayers.push(pickLayer('speech-bubble'))
+                    return newLayers
+                  },
+                }),
+              ],
               after: { target: 'pointing_switch' },
             },
+
+
             pointing_switch: {
               entry: [
                 assign({
@@ -287,6 +303,8 @@ const machine = createMachine({
               ],
               after: { target: 'hottub_switch' },
             },
+
+
             hottub_switch: {
               entry: [
                 assign({
