@@ -32,6 +32,7 @@ const machine = createMachine(
       countdown_shoulders: 0,
       countdown_snout: 0,
       countdown_water: 0,
+      countdown_speech_bubble: 0,
       isMousing: false,
       isMousingBuffer: 0,
       isTalking: false,
@@ -179,11 +180,49 @@ const machine = createMachine(
                     visibleLayers: [],
                   }),
                 ],
+                after: { target: 'speech_bubble_countdown' },
+              },
+              speech_bubble_countdown: {
+                entry: [
+                  assign({
+                    countdown_speech_bubble: (context) => {
+                      if (context.countdown_speech_bubble !== 0) {
+                        console.log(context.countdown_speech_bubble)
+                        return context.countdown_speech_bubble - 1
+                      } else {
+                        return 0
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'clear_speech_bubble' },
+              },
+
+              clear_speech_bubble: {
+                entry: [
+                  assign({
+                    currentSpeechBubble: (context) => {
+                      if (context.countdown_speech_bubble === 0) {
+                        return null
+                      } else {
+                        return context.currentSpeechBubble
+                      }
+                    },
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.countdown_speech_bubble !== 0) {
+                        newLayers.push(pickLayer('speech-bubble-mat'))
+                        newLayers.push(pickLayer('speech-bubble'))
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
                 after: { target: 'eyes_countdown' },
               },
+
               eyes_countdown: {
                 entry: [
-                  // log('STATE: Updating eyes'),
                   assign({
                     countdown_eyes: (context) => {
                       if (context.countdown_eyes === 0) {
@@ -192,7 +231,6 @@ const machine = createMachine(
                         return context.countdown_eyes - 1
                       }
                     },
-                    trigger: false,
                   }),
                 ],
                 after: { target: 'keyboard_countdown' },
@@ -278,16 +316,7 @@ const machine = createMachine(
               },
 
               speech_bubble_switch: {
-                entry: [
-                  assign({
-                    visibleLayers: (context) => {
-                      const newLayers = [...context.visibleLayers]
-                      newLayers.push(pickLayer('speech-bubble-mat'))
-                      newLayers.push(pickLayer('speech-bubble'))
-                      return newLayers
-                    },
-                  }),
-                ],
+                entry: [assign({})],
                 after: { target: 'pointing_switch' },
               },
 
@@ -610,6 +639,7 @@ const machine = createMachine(
     actions: {
       sayHiToChat: (context, event) => {
         context.currentSpeechBubble = event.name
+        context.countdown_speech_bubble = 42
       },
     },
   }
@@ -624,6 +654,7 @@ actor.subscribe((state) => {
         layers[0].rows.forEach((row, rIndex) => {
           row.forEach((pixel, pIndex) => {
             theGrid[rIndex][pIndex].innerText = ' '
+            theGrid[rIndex][pIndex].classList.remove('activePixel')
           })
         })
 
@@ -651,7 +682,7 @@ actor.subscribe((state) => {
         if (state.context.currentSayHi !== null) {
           speechDiv.innerHTML = state.context.currentSpeechBubble
         } else {
-          speechDiv.innerHTML = ""
+          speechDiv.innerHTML = ''
         }
       }
     })
