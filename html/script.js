@@ -683,6 +683,7 @@ actor.subscribe((state) => {
         } else {
           speechDiv.innerHTML = ''
         }
+
       }
     })
   }

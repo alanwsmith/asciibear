@@ -14,9 +14,16 @@ use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
+use nom::bytes::complete::tag_no_case;
+use nom::bytes::complete::take_until;
 use nom::bytes::complete::take_while_m_n;
+use nom::character::complete::space0;
+use nom::character::complete::space1;
 use nom::combinator::map_res;
 use nom::combinator::opt;
+use nom::combinator::rest;
+use nom::multi::many1;
+use nom::sequence::tuple;
 use nom::sequence::Tuple;
 use nom::IResult;
 use nom::Parser;
@@ -193,24 +200,30 @@ pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> 
         None => None,
         Some(junk) => match junk {
             TwitchCommand::None => None,
-            TwitchCommand::SayHi => {
-                tbs.key = Some("sayhi".to_string());
-                tbs.value = Some(format!("Hi {}!", payload.clone().sender.name));
-                Some(serde_json::to_string(&tbs).unwrap())
-            }
+            // TwitchCommand::SayHi => {
+            //     tbs.key = Some("sayhi".to_string());
+            //     tbs.value = Some(format!("Hi {}!", payload.clone().sender.name));
+            //     Some(serde_json::to_string(&tbs).unwrap())
+            // }
         },
     }
 }
 
+// !bear head: some color, keys: some color
+// !bear keys: asdf
+// !bear palette: asdf
+
 pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
     let (source, cmd) = opt(alt((
+        bear_command,
+        bear_command,
         // twitch_bear_body,
         // twitch_bear_head,
         // twitch_bear_keys,
         // twitch_bear_eyes,
         // twitch_bearbg_color
-        twitch_say_hi,
-        twitch_say_hi,
+        // twitch_say_hi,
+        // twitch_say_hi,
     )))(source)?;
     Ok((source, cmd))
 }
@@ -228,15 +241,14 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
                         said_hello_to.insert(payload.clone().sender.name);
                         let tbs = TwitchBearShipment {
                             key: Some("sayhi".to_string()),
-                            value: Some(payload.clone().sender.name),
+                            value: Some(format!("Hi {}!", payload.clone().sender.name)),
                         };
                         let _ = tx.send(serde_json::to_string(&tbs).unwrap());
                     }
 
-                    // dbg!(&payload.sender.name);
-                    // if let Some(msg) = assemble_twitch_message(payload) {
-                    //     let _ = tx.send(msg);
-                    // }
+                    if let Some(msg) = assemble_twitch_message(payload) {
+                        let _ = tx.send(msg);
+                    }
                 }
                 _ => {}
             }
@@ -254,30 +266,65 @@ pub enum TwitchCommand {
     // BearEyes(Color),
     // BearKeys(Color),
     // BearBgColor(Color),
-    SayHi,
+    // SayHi,
     None,
 }
 
-fn read_twitch(
-    source: &str,
-    payload: twitch_irc::message::PrivmsgMessage,
-) -> IResult<&str, Option<TwitchCommand>> {
-    dbg!(payload);
-    let (source, cmd) = opt(alt((
-        // twitch_bear_body,
-        // twitch_bear_head,
-        // twitch_bear_keys,
-        // twitch_bear_eyes,
-        // twitch_bearbg_color
-        twitch_say_hi,
-        twitch_say_hi,
-    )))(source)?;
-    Ok((source, cmd))
+// fn read_twitch(
+//     source: &str,
+//     payload: twitch_irc::message::PrivmsgMessage,
+// ) -> IResult<&str, Option<TwitchCommand>> {
+//     dbg!(payload);
+//     let (source, cmd) = opt(alt((
+//         bear_command,
+//         bear_command,
+//         // twitch_bear_body,
+//         // twitch_bear_head,
+//         // twitch_bear_keys,
+//         // twitch_bear_eyes,
+//         // twitch_bearbg_color
+//         // twitch_say_hi,
+//         // twitch_say_hi,
+//     )))(source)?;
+//     Ok((source, cmd))
+// }
+
+fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, _) = tag_no_case("!bear")(source)?;
+    let (source, _) = opt(tag(":"))(source)?;
+    let (source, _) = space1(source)?;
+    let (source, instructions) = many1(bear_instruction)(source)?;
+    Ok(("", TwitchCommand::None))
 }
 
-fn twitch_say_hi(source: &str) -> IResult<&str, TwitchCommand> {
-    Ok((source, TwitchCommand::SayHi))
+// !bear eyes: asdf asdf, body: werwer,
+
+fn bear_instruction(source: &str) -> IResult<&str, BearInstruction> {
+    let (source, instruction) = tuple((
+        alt((
+            tag_no_case("head"),
+            tag_no_case("body"),
+            tag_no_case("eyes"),
+            tag_no_case("keys"),
+        )),
+        tag(":"),
+        space0,
+        alt((take_until(","), rest)),
+        opt(tag(",")),
+    ))(source)?;
+
+    dbg!(&instruction);
+
+    Ok(("", BearInstruction::None))
 }
+
+pub enum BearInstruction {
+    None,
+}
+
+// fn twitch_say_hi(source: &str) -> IResult<&str, TwitchCommand> {
+//     Ok((source, TwitchCommand::SayHi))
+// }
 
 // fn twitch_bear_body(source: &str) -> IResult<&str, TwitchCommand> {
 //     let (source, _) = tag("!body ")(source)?;
