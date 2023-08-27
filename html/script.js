@@ -19,596 +19,601 @@ const pickLayer = (layerType) => {
   return theLayer
 }
 
-const machine = createMachine({
-  predictableActionArguments: true,
-  initial: 'loading',
-  context: {
-    countdown_eyes: 0,
-    countdown_keyboard: 0,
-    countdown_mouse: 0,
-    countdown_mouth: 0,
-    countdown_pointing: 0,
-    countdown_shoulders: 0,
-    countdown_snout: 0,
-    countdown_water: 0,
-    isMousing: false,
-    isMousingBuffer: 0,
-    isTalking: false,
-    isTyping: false,
-    lastActiveKeyboard: null,
-    lastActiveMouse: null,
-    lastWater: null,
-    pointing: 'forward',
-    visibleLayers: [],
-    currentSayHi: 'ALFA',
-  },
-  states: {
-    loading: {
-      entry: log('started!'),
-      on: {
-        KICKOFF: { target: 'alive' },
-      },
+const machine = createMachine(
+  {
+    predictableActionArguments: true,
+    initial: 'loading',
+    context: {
+      countdown_eyes: 0,
+      countdown_keyboard: 0,
+      countdown_mouse: 0,
+      countdown_mouth: 0,
+      countdown_pointing: 0,
+      countdown_shoulders: 0,
+      countdown_snout: 0,
+      countdown_water: 0,
+      isMousing: false,
+      isMousingBuffer: 0,
+      isTalking: false,
+      isTyping: false,
+      lastActiveKeyboard: null,
+      lastActiveMouse: null,
+      lastWater: null,
+      pointing: 'forward',
+      visibleLayers: [],
+      currentSpeechBubble: null,
     },
-    alive: {
-      type: 'parallel',
-      states: {
-        mousing: {
-          initial: 'mouseNotMoving',
-          states: {
-            mouseNotMoving: {
-              on: { STARTMOUSING: { target: ['mouseMoving'] } },
-              entry: [
-                assign({
-                  isMousing: false,
-                  isMousingBuffer: 0,
-                }),
-              ],
+    states: {
+      loading: {
+        entry: log('started!'),
+        on: {
+          KICKOFF: { target: 'alive' },
+        },
+      },
+      alive: {
+        type: 'parallel',
+        states: {
+          saying: {
+            on: {
+              SAYHI: {
+                actions: ['sayHiToChat'],
+              },
             },
-            mouseMoving: {
-              on: { STARTMOUSING: { target: ['mouseMoving'] } },
-              entry: [
-                assign({
-                  isMousingBuffer: (context) => {
-                    return context.isMousingBuffer + 1
+          },
+
+          mousing: {
+            initial: 'mouseNotMoving',
+            states: {
+              mouseNotMoving: {
+                on: { STARTMOUSING: { target: ['mouseMoving'] } },
+                entry: [
+                  assign({
+                    isMousing: false,
+                    isMousingBuffer: 0,
+                  }),
+                ],
+              },
+              mouseMoving: {
+                on: { STARTMOUSING: { target: ['mouseMoving'] } },
+                entry: [
+                  assign({
+                    isMousingBuffer: (context) => {
+                      return context.isMousingBuffer + 1
+                    },
+                    isMousing: (context) => {
+                      if (context.isMousingBuffer > 10) {
+                        return true
+                      } else {
+                        return false
+                      }
+                    },
+                  }),
+                ],
+                after: [
+                  {
+                    delay: () => {
+                      return 450
+                    },
+                    target: 'mouseNotMoving',
                   },
-                  isMousing: (context) => {
-                    if (context.isMousingBuffer > 10) {
-                      return true
-                    } else {
+                ],
+              },
+            },
+          },
+
+          talking: {
+            initial: 'mouthNotMoving',
+            states: {
+              mouthNotMoving: {
+                on: { STARTTALKING: { target: ['mouthMoving'] } },
+                entry: [
+                  assign({
+                    isTalking: () => {
                       return false
-                    }
+                    },
+                  }),
+                ],
+              },
+              mouthMoving: {
+                on: { STARTTALKING: { target: ['mouthMoving'] } },
+                entry: [
+                  assign({
+                    isTalking: () => {
+                      return true
+                    },
+                  }),
+                ],
+                after: [
+                  {
+                    delay: () => {
+                      return 150
+                    },
+                    target: 'mouthNotMoving',
                   },
-                }),
-              ],
-              after: [
-                {
-                  delay: () => {
-                    return 450
-                  },
-                  target: 'mouseNotMoving',
-                },
-              ],
+                ],
+              },
             },
           },
-        },
 
-        talking: {
-          initial: 'mouthNotMoving',
-          states: {
-            mouthNotMoving: {
-              on: { STARTTALKING: { target: ['mouthMoving'] } },
-              entry: [
-                assign({
-                  isTalking: () => {
-                    return false
+          typing: {
+            initial: 'typingOff',
+            states: {
+              typingOff: {
+                on: { STARTTYPING: { target: ['isTyping'] } },
+                entry: [
+                  assign({
+                    isTyping: () => {
+                      return false
+                    },
+                  }),
+                ],
+              },
+              isTyping: {
+                on: { STARTTYPING: { target: ['isTyping'] } },
+                entry: [
+                  assign({
+                    isTyping: () => {
+                      return true
+                    },
+                  }),
+                ],
+                after: [
+                  {
+                    delay: () => {
+                      return 410
+                    },
+                    target: 'typingOff',
                   },
-                }),
-              ],
-            },
-            mouthMoving: {
-              on: { STARTTALKING: { target: ['mouthMoving'] } },
-              entry: [
-                assign({
-                  isTalking: () => {
-                    return true
-                  },
-                }),
-              ],
-              after: [
-                {
-                  delay: () => {
-                    return 150
-                  },
-                  target: 'mouthNotMoving',
-                },
-              ],
+                ],
+              },
             },
           },
-        },
 
-        typing: {
-          initial: 'typingOff',
-          states: {
-            typingOff: {
-              on: { STARTTYPING: { target: ['isTyping'] } },
-              entry: [
-                assign({
-                  isTyping: () => {
-                    return false
-                  },
-                }),
-              ],
-            },
-            isTyping: {
-              on: { STARTTYPING: { target: ['isTyping'] } },
-              entry: [
-                assign({
-                  isTyping: () => {
-                    return true
-                  },
-                }),
-              ],
-              after: [
-                {
-                  delay: () => {
-                    return 410
-                  },
-                  target: 'typingOff',
-                },
-              ],
-            },
-          },
-        },
-
-        layers: {
-          initial: 'start_update',
-          states: {
-            start_update: {
-              entry: [
-                assign({
-                  trigger: false,
-                  visibleLayers: [],
-                }),
-              ],
-              after: { target: 'eyes_countdown' },
-            },
-            eyes_countdown: {
-              entry: [
-                // log('STATE: Updating eyes'),
-                assign({
-                  countdown_eyes: (context) => {
-                    if (context.countdown_eyes === 0) {
-                      return Math.floor(Math.random() * 30) + 18
-                    } else {
-                      return context.countdown_eyes - 1
-                    }
-                  },
-                  trigger: false,
-                }),
-              ],
-              after: { target: 'keyboard_countdown' },
-            },
-            keyboard_countdown: {
-              entry: [
-                assign({
-                  countdown_keyboard: (context) => {
-                    if (context.countdown_keyboard === 0) {
-                      const randNum = Math.floor(Math.random() * 10)
-                      if (randNum > 9) {
-                        return 3
-                      } else if (randNum > 7) {
-                        return 2
-                      } else {
-                        return 1
-                      }
-                    } else {
-                      return context.countdown_keyboard - 1
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'mouse_countdown' },
-            },
-            mouse_countdown: {
-              entry: [
-                assign({
-                  countdown_mouse: (context) => {
-                    if (context.countdown_mouse === 0) {
-                      const randNum = Math.floor(Math.random() * 10)
-                      if (randNum > 9) {
-                        return 4
-                      } else if (randNum > 7) {
-                        return 3
-                      } else {
-                        return 2
-                      }
-                    } else {
-                      return context.countdown_mouse - 1
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'mouth_countdown' },
-            },
-            mouth_countdown: {
-              after: { target: 'pointing_countdown' },
-            },
-            pointing_countdown: {
-              entry: [
-                assign({
-                  countdown_pointing: (context) => {
-                    if (context.countdown_pointing === 0) {
-                      return Math.floor(Math.random() * 7) + 7
-                    } else {
-                      return context.countdown_pointing - 1
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'shoulders_countdown' },
-            },
-            shoulders_countdown: {
-              after: { target: 'snout_countdown' },
-            },
-            snout_countdown: {
-              after: { target: 'water_countdown' },
-            },
-            water_countdown: {
-              entry: [
-                assign({
-                  countdown_water: (context) => {
-                    if (context.countdown_water === 0) {
-                      return 3
-                    } else {
-                      return context.countdown_water - 1
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'speech_bubble_switch' },
-            },
-
-            speech_bubble_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    // newLayers.push(pickLayer('speech-bubble-mat'))
-                    // newLayers.push(pickLayer('speech-bubble'))
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'pointing_switch' },
-            },
-
-            pointing_switch: {
-              entry: [
-                assign({
-                  pointing: (context) => {
-                    if (context.isTyping) {
-                      if (context.countdown_pointing === 0) {
-                        return ['looking', 'forward'][
-                          Math.floor(Math.random() * 2)
-                        ]
-                      } else {
-                        return context.pointing
-                      }
-                    } else if (context.isMousing) {
-                      return 'looking'
-                    } else {
-                      return 'forward'
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'hottub_switch' },
-            },
-
-            hottub_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    newLayers.push(pickLayer('hottub-border-mat'))
-                    newLayers.push(pickLayer('hottub-border'))
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'head_switch' },
-            },
-
-            head_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === 'looking') {
-                      newLayers.push(pickLayer('looking-head-mat'))
-                      newLayers.push(pickLayer('looking-head-base'))
-                    } else {
-                      newLayers.push(pickLayer('forward-head-mat'))
-                      newLayers.push(pickLayer('forward-head-base'))
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'eyes_switch' },
-            },
-
-            eyes_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === 'looking') {
+          layers: {
+            initial: 'start_update',
+            states: {
+              start_update: {
+                entry: [
+                  assign({
+                    trigger: false,
+                    visibleLayers: [],
+                  }),
+                ],
+                after: { target: 'eyes_countdown' },
+              },
+              eyes_countdown: {
+                entry: [
+                  // log('STATE: Updating eyes'),
+                  assign({
+                    countdown_eyes: (context) => {
                       if (context.countdown_eyes === 0) {
-                        newLayers.push(pickLayer('looking-eyes-blinking'))
+                        return Math.floor(Math.random() * 30) + 18
                       } else {
-                        newLayers.push(pickLayer('looking-eyes-open'))
+                        return context.countdown_eyes - 1
                       }
-                    } else {
-                      if (context.isTyping) {
-                        if (context.countdown_eyes === 0) {
-                          newLayers.push(pickLayer('typing-eyes-blinking'))
+                    },
+                    trigger: false,
+                  }),
+                ],
+                after: { target: 'keyboard_countdown' },
+              },
+              keyboard_countdown: {
+                entry: [
+                  assign({
+                    countdown_keyboard: (context) => {
+                      if (context.countdown_keyboard === 0) {
+                        const randNum = Math.floor(Math.random() * 10)
+                        if (randNum > 9) {
+                          return 3
+                        } else if (randNum > 7) {
+                          return 2
                         } else {
-                          newLayers.push(pickLayer('typing-eyes-open'))
+                          return 1
                         }
                       } else {
-                        if (context.countdown_eyes === 0) {
-                          newLayers.push(pickLayer('forward-eyes-blinking'))
-                        } else {
-                          newLayers.push(pickLayer('forward-eyes-open'))
-                        }
+                        return context.countdown_keyboard - 1
                       }
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'hottub_keyboard_pick' },
-            },
+                    },
+                  }),
+                ],
+                after: { target: 'mouse_countdown' },
+              },
+              mouse_countdown: {
+                entry: [
+                  assign({
+                    countdown_mouse: (context) => {
+                      if (context.countdown_mouse === 0) {
+                        const randNum = Math.floor(Math.random() * 10)
+                        if (randNum > 9) {
+                          return 4
+                        } else if (randNum > 7) {
+                          return 3
+                        } else {
+                          return 2
+                        }
+                      } else {
+                        return context.countdown_mouse - 1
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'mouth_countdown' },
+              },
+              mouth_countdown: {
+                after: { target: 'pointing_countdown' },
+              },
+              pointing_countdown: {
+                entry: [
+                  assign({
+                    countdown_pointing: (context) => {
+                      if (context.countdown_pointing === 0) {
+                        return Math.floor(Math.random() * 7) + 7
+                      } else {
+                        return context.countdown_pointing - 1
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'shoulders_countdown' },
+              },
+              shoulders_countdown: {
+                after: { target: 'snout_countdown' },
+              },
+              snout_countdown: {
+                after: { target: 'water_countdown' },
+              },
+              water_countdown: {
+                entry: [
+                  assign({
+                    countdown_water: (context) => {
+                      if (context.countdown_water === 0) {
+                        return 3
+                      } else {
+                        return context.countdown_water - 1
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'speech_bubble_switch' },
+              },
 
-            keyboard_pick: {
-              entry: [
-                assign({
-                  lastActiveKeyboard: (context) => {
-                    if (context.isMousing) {
-                      if (context.lastActiveKeyboard === null) {
-                        return pickLayer('mouse-keyboard')
-                      } else if (context.countdown_keyboard === 0) {
-                        return pickLayer('mouse-keyboard')
-                      } else {
-                        return context.lastActiveKeyboard
-                        //return pickLayer('mouse-keyboard')
-                      }
-                    } else {
-                      if (context.lastActiveKeyboard === null) {
-                        return pickLayer('keyboard-active')
-                      } else if (context.countdown_keyboard === 0) {
-                        return pickLayer('keyboard-active')
-                      } else {
-                        return context.lastActiveKeyboard
-                        //return pickLayer('keyboard-active')
-                      }
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'keyboard_switch' },
-            },
-            hottub_keyboard_pick: {
-              entry: [
-                assign({
-                  lastActiveKeyboard: (context) => {
-                    if (context.isMousing) {
-                      if (context.lastActiveKeyboard === null) {
-                        return pickLayer('hottub-keyboard-active')
-                      } else if (context.countdown_keyboard === 0) {
-                        return pickLayer('hottub-keyboard-active')
-                      } else {
-                        return context.lastActiveKeyboard
-                      }
-                    } else {
-                      if (context.lastActiveKeyboard === null) {
-                        return pickLayer('hottub-keyboard-active')
-                      } else if (context.countdown_keyboard === 0) {
-                        return pickLayer('hottub-keyboard-active')
-                      } else {
-                        return context.lastActiveKeyboard
-                      }
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'keyboard_switch' },
-            },
-            keyboard_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.isTyping) {
-                      newLayers.push(context.lastActiveKeyboard)
-                      //newLayers.push(pickLayer('keyboard-active'))
-                    } else {
-                      newLayers.push(pickLayer('keyboard-hottub-inactive'))
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'mouse_pick' },
-            },
-            mouse_pick: {
-              entry: [
-                assign({
-                  lastActiveMouse: (context) => {
-                    if (context.lastActiveMouse === null) {
-                      return pickLayer('mouse-active')
-                    } else if (context.countdown_mouse === 0) {
-                      return pickLayer('mouse-active')
-                    } else {
-                      return context.lastActiveMouse
-                    }
-                  },
-                }),
-              ],
-              after: { target: 'mouse_switch' },
-            },
-            mouse_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.isMousing && !context.isTyping) {
-                      newLayers.push(context.lastActiveMouse)
-                    } else {
-                      newLayers.push(pickLayer('mouse-inactive'))
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'mouth_switch' },
-            },
-            mouth_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.isTalking) {
-                      if (context.pointing === 'looking') {
-                        newLayers.push(pickLayer('looking-mouth-talking'))
-                      } else {
-                        if (context.isTyping) {
-                          newLayers.push(pickLayer('typing-mouth-talking'))
-                        } else {
-                          newLayers.push(pickLayer('forward-mouth-talking'))
-                        }
-                      }
-                    } else {
-                      if (context.pointing === 'looking') {
-                        newLayers.push(pickLayer('looking-mouth-closed'))
-                      } else {
-                        if (context.isTyping) {
-                          newLayers.push(pickLayer('typing-mouth-closed'))
-                        } else {
-                          newLayers.push(pickLayer('forward-mouth-closed'))
-                        }
-                      }
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'shoulders_switch' },
-            },
-            shoulders_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === 'looking') {
-                      newLayers.push(pickLayer('looking-shoulders-base'))
-                    } else {
-                      newLayers.push(pickLayer('forward-shoulders-base'))
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'snout_switch' },
-            },
-            snout_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    if (context.pointing === 'looking') {
-                      newLayers.push(pickLayer('looking-snout-base'))
-                    } else {
+              speech_bubble_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      newLayers.push(pickLayer('speech-bubble-mat'))
+                      newLayers.push(pickLayer('speech-bubble'))
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'pointing_switch' },
+              },
+
+              pointing_switch: {
+                entry: [
+                  assign({
+                    pointing: (context) => {
                       if (context.isTyping) {
-                        newLayers.push(pickLayer('forward-snout-down'))
+                        if (context.countdown_pointing === 0) {
+                          return ['looking', 'forward'][
+                            Math.floor(Math.random() * 2)
+                          ]
+                        } else {
+                          return context.pointing
+                        }
+                      } else if (context.isMousing) {
+                        return 'looking'
                       } else {
-                        newLayers.push(pickLayer('forward-snout-up'))
+                        return 'forward'
                       }
-                    }
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'water_pick' },
-            },
-            water_pick: {
-              entry: [
-                assign({
-                  lastWater: (context) => {
-                    if (context.lastWater === null) {
-                      return pickLayer('hottub-water')
-                    } else if (context.countdown_water === 0) {
-                      let newWater = null
-                      for (let i = 0; i < 50; i++) {
-                        newWater = pickLayer('hottub-water')
-                        if (newWater !== context.lastWater) {
-                          break
+                    },
+                  }),
+                ],
+                after: { target: 'hottub_switch' },
+              },
+
+              hottub_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      newLayers.push(pickLayer('hottub-border-mat'))
+                      newLayers.push(pickLayer('hottub-border'))
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'head_switch' },
+              },
+
+              head_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.pointing === 'looking') {
+                        newLayers.push(pickLayer('looking-head-mat'))
+                        newLayers.push(pickLayer('looking-head-base'))
+                      } else {
+                        newLayers.push(pickLayer('forward-head-mat'))
+                        newLayers.push(pickLayer('forward-head-base'))
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'eyes_switch' },
+              },
+
+              eyes_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.pointing === 'looking') {
+                        if (context.countdown_eyes === 0) {
+                          newLayers.push(pickLayer('looking-eyes-blinking'))
+                        } else {
+                          newLayers.push(pickLayer('looking-eyes-open'))
+                        }
+                      } else {
+                        if (context.isTyping) {
+                          if (context.countdown_eyes === 0) {
+                            newLayers.push(pickLayer('typing-eyes-blinking'))
+                          } else {
+                            newLayers.push(pickLayer('typing-eyes-open'))
+                          }
+                        } else {
+                          if (context.countdown_eyes === 0) {
+                            newLayers.push(pickLayer('forward-eyes-blinking'))
+                          } else {
+                            newLayers.push(pickLayer('forward-eyes-open'))
+                          }
                         }
                       }
-                      return newWater
-                    } else {
-                      return context.lastWater
-                    }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'hottub_keyboard_pick' },
+              },
+
+              keyboard_pick: {
+                entry: [
+                  assign({
+                    lastActiveKeyboard: (context) => {
+                      if (context.isMousing) {
+                        if (context.lastActiveKeyboard === null) {
+                          return pickLayer('mouse-keyboard')
+                        } else if (context.countdown_keyboard === 0) {
+                          return pickLayer('mouse-keyboard')
+                        } else {
+                          return context.lastActiveKeyboard
+                          //return pickLayer('mouse-keyboard')
+                        }
+                      } else {
+                        if (context.lastActiveKeyboard === null) {
+                          return pickLayer('keyboard-active')
+                        } else if (context.countdown_keyboard === 0) {
+                          return pickLayer('keyboard-active')
+                        } else {
+                          return context.lastActiveKeyboard
+                          //return pickLayer('keyboard-active')
+                        }
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'keyboard_switch' },
+              },
+              hottub_keyboard_pick: {
+                entry: [
+                  assign({
+                    lastActiveKeyboard: (context) => {
+                      if (context.isMousing) {
+                        if (context.lastActiveKeyboard === null) {
+                          return pickLayer('hottub-keyboard-active')
+                        } else if (context.countdown_keyboard === 0) {
+                          return pickLayer('hottub-keyboard-active')
+                        } else {
+                          return context.lastActiveKeyboard
+                        }
+                      } else {
+                        if (context.lastActiveKeyboard === null) {
+                          return pickLayer('hottub-keyboard-active')
+                        } else if (context.countdown_keyboard === 0) {
+                          return pickLayer('hottub-keyboard-active')
+                        } else {
+                          return context.lastActiveKeyboard
+                        }
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'keyboard_switch' },
+              },
+              keyboard_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.isTyping) {
+                        newLayers.push(context.lastActiveKeyboard)
+                        //newLayers.push(pickLayer('keyboard-active'))
+                      } else {
+                        newLayers.push(pickLayer('keyboard-hottub-inactive'))
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'mouse_pick' },
+              },
+              mouse_pick: {
+                entry: [
+                  assign({
+                    lastActiveMouse: (context) => {
+                      if (context.lastActiveMouse === null) {
+                        return pickLayer('mouse-active')
+                      } else if (context.countdown_mouse === 0) {
+                        return pickLayer('mouse-active')
+                      } else {
+                        return context.lastActiveMouse
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'mouse_switch' },
+              },
+              mouse_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.isMousing && !context.isTyping) {
+                        newLayers.push(context.lastActiveMouse)
+                      } else {
+                        newLayers.push(pickLayer('mouse-inactive'))
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'mouth_switch' },
+              },
+              mouth_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.isTalking) {
+                        if (context.pointing === 'looking') {
+                          newLayers.push(pickLayer('looking-mouth-talking'))
+                        } else {
+                          if (context.isTyping) {
+                            newLayers.push(pickLayer('typing-mouth-talking'))
+                          } else {
+                            newLayers.push(pickLayer('forward-mouth-talking'))
+                          }
+                        }
+                      } else {
+                        if (context.pointing === 'looking') {
+                          newLayers.push(pickLayer('looking-mouth-closed'))
+                        } else {
+                          if (context.isTyping) {
+                            newLayers.push(pickLayer('typing-mouth-closed'))
+                          } else {
+                            newLayers.push(pickLayer('forward-mouth-closed'))
+                          }
+                        }
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'shoulders_switch' },
+              },
+              shoulders_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.pointing === 'looking') {
+                        newLayers.push(pickLayer('looking-shoulders-base'))
+                      } else {
+                        newLayers.push(pickLayer('forward-shoulders-base'))
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'snout_switch' },
+              },
+              snout_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      if (context.pointing === 'looking') {
+                        newLayers.push(pickLayer('looking-snout-base'))
+                      } else {
+                        if (context.isTyping) {
+                          newLayers.push(pickLayer('forward-snout-down'))
+                        } else {
+                          newLayers.push(pickLayer('forward-snout-up'))
+                        }
+                      }
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'water_pick' },
+              },
+              water_pick: {
+                entry: [
+                  assign({
+                    lastWater: (context) => {
+                      if (context.lastWater === null) {
+                        return pickLayer('hottub-water')
+                      } else if (context.countdown_water === 0) {
+                        let newWater = null
+                        for (let i = 0; i < 50; i++) {
+                          newWater = pickLayer('hottub-water')
+                          if (newWater !== context.lastWater) {
+                            break
+                          }
+                        }
+                        return newWater
+                      } else {
+                        return context.lastWater
+                      }
+                    },
+                  }),
+                ],
+                after: { target: 'water_switch' },
+              },
+              water_switch: {
+                entry: [
+                  assign({
+                    visibleLayers: (context) => {
+                      const newLayers = [...context.visibleLayers]
+                      newLayers.push(context.lastWater)
+                      return newLayers
+                    },
+                  }),
+                ],
+                after: { target: 'delay' },
+              },
+              delay: {
+                entry: [
+                  // log((context, e) => `VL: ${context.isTyping}`),
+                  assign({ trigger: true }),
+                ],
+                after: [
+                  {
+                    delay: () => {
+                      return Math.floor(Math.random() * 33) + 90
+                    },
+                    target: 'start_update',
                   },
-                }),
-              ],
-              after: { target: 'water_switch' },
-            },
-            water_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    newLayers.push(context.lastWater)
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'text_switch' },
-            },
-            text_switch: {
-              entry: [
-                assign({
-                  visibleLayers: (context) => {
-                    const newLayers = [...context.visibleLayers]
-                    newLayers.push(pickLayer('text-canvas'))
-                    return newLayers
-                  },
-                }),
-              ],
-              after: { target: 'delay' },
-            },
-            delay: {
-              entry: [
-                // log((context, e) => `VL: ${context.isTyping}`),
-                assign({ trigger: true }),
-              ],
-              after: [
-                {
-                  delay: () => {
-                    return Math.floor(Math.random() * 30) + 80
-                  },
-                  target: 'start_update',
-                },
-              ],
+                ],
+              },
             },
           },
         },
       },
     },
   },
-})
+  {
+    actions: {
+      sayHiToChat: (context, event) => {
+        context.currentSpeechBubble = event.name
+      },
+    },
+  }
+)
 
 const actor = interpret(machine).start()
 
@@ -625,8 +630,9 @@ actor.subscribe((state) => {
         state.context.visibleLayers.forEach((lIndex) => {
           // lIndex might be undefined because of the way
           // pickLayer works. So, make sure it exists first
-          if (lIndex) {
+          if (lIndex !== undefined) {
             layers[lIndex].rows.forEach((row, rIndex) => {
+              layers[lIndex].layerName
               row.forEach((pixel, pIndex) => {
                 if (pixel.char !== '') {
                   theGrid[rIndex][pIndex].classList = ''
@@ -641,6 +647,12 @@ actor.subscribe((state) => {
             })
           }
         })
+
+        if (state.context.currentSayHi !== null) {
+          speechDiv.innerHTML = state.context.currentSpeechBubble
+        } else {
+          speechDiv.innerHTML = ""
+        }
       }
     })
   }
@@ -698,10 +710,12 @@ ws.onmessage = (event) => {
         color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
       }`
     )
+
     newStyleSheet.appendChild(newStyleText)
     document.head.appendChild(newStyleSheet)
   } else if (payload.key === 'sayhi') {
-    actor.send({ type: 'SAYHI', data: payload.value })
+    console.log('Got Rust Message To Say Hi')
+    actor.send({ type: 'SAYHI', name: payload.value })
   } else if (payload.key === 'screen_position') {
   } else if (payload.key === 'test') {
     console.log(payload)
