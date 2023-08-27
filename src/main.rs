@@ -40,6 +40,7 @@ use twitch_irc::TwitchIRCClient;
 // use tokio::sync::mpsc::UnboundedSender;
 // use asciibear::helpers::spawn;
 // use asciibear::stream_manager::start;
+use std::collections::HashSet;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -219,12 +220,23 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
     let join_handle = tokio::spawn(async move {
+        let mut said_hello_to: HashSet<String> = HashSet::new();
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
-                    if let Some(msg) = assemble_twitch_message(payload) {
-                        let _ = tx.send(msg);
+                    if !said_hello_to.contains(&payload.sender.name) {
+                        said_hello_to.insert(payload.clone().sender.name);
+                        let tbs = TwitchBearShipment {
+                            key: Some("sayhi".to_string()),
+                            value: Some(payload.clone().sender.name),
+                        };
+                        let _ = tx.send(serde_json::to_string(&tbs).unwrap());
                     }
+
+                    // dbg!(&payload.sender.name);
+                    // if let Some(msg) = assemble_twitch_message(payload) {
+                    //     let _ = tx.send(msg);
+                    // }
                 }
                 _ => {}
             }

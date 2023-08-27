@@ -187,7 +187,6 @@ const machine = createMachine(
                   assign({
                     countdown_speech_bubble: (context) => {
                       if (context.countdown_speech_bubble !== 0) {
-                        console.log(context.countdown_speech_bubble)
                         return context.countdown_speech_bubble - 1
                       } else {
                         return 0
