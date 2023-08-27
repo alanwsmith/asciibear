@@ -764,12 +764,11 @@ const make_grid = (data) => {
   }
 }
 
-const make_speech_grid = () => {
+const make_background_grid_1 = () => {
   let rows = 42
   let cols = 130
-
   const newT = document.createElement('table')
-  newT.id = 'speechBubbleTable'
+  newT.id = 'canvasBackgroundTable1'
   for (let r = 0; r <= rows; r++) {
     const newTr = document.createElement('tr')
     for (let c = 0; c <= cols; c++) {
@@ -780,15 +779,14 @@ const make_speech_grid = () => {
     }
     newT.appendChild(newTr)
   }
-  speechBubble.appendChild(newT)
+  canvasBackground1.appendChild(newT)
 }
 
-const make_speech_grid2 = () => {
+const make_background_grid_2 = () => {
   let rows = 42
   let cols = 130
-
   const newT = document.createElement('table')
-  newT.id = 'speechBubbleTable2'
+  newT.id = 'canvasBackgroundTable2'
   for (let r = 0; r <= rows; r++) {
     const newTr = document.createElement('tr')
     for (let c = 0; c <= cols; c++) {
@@ -799,7 +797,16 @@ const make_speech_grid2 = () => {
     }
     newT.appendChild(newTr)
   }
-  speechBubble2.appendChild(newT)
+  canvasBackground2.appendChild(newT)
+}
+
+const make_speech_bubble_grid = () => {
+  let rows = 42
+  let cols = 130
+  const speechDiv = document.createElement('div')
+  speechDiv.id = 'speechDiv'
+  speechDiv.innerHTML = "HELLO CHAT"
+  speechBubble.appendChild(speechDiv)
 }
 
 const init = () => {
@@ -809,9 +816,10 @@ const init = () => {
       return response.json()
     })
     .then((data) => {
+      make_background_grid_1(data)
+      make_background_grid_2(data)
       make_grid(data)
-      make_speech_grid(data)
-      make_speech_grid2(data)
+      make_speech_bubble_grid(data)
       layers = data.layers
       actor.send({ type: 'KICKOFF' })
     })
