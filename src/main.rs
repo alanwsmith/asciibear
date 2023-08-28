@@ -13,20 +13,26 @@ use device_query::{DeviceEvents, DeviceState};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use nom::branch::alt;
+use nom::bytes::complete::is_not;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::tag_no_case;
 use nom::bytes::complete::take_until;
 use nom::bytes::complete::take_while_m_n;
+use nom::character::complete::hex_digit0;
 use nom::character::complete::space0;
 use nom::character::complete::space1;
+use nom::combinator::eof;
 use nom::combinator::map_res;
 use nom::combinator::opt;
 use nom::combinator::rest;
 use nom::multi::many1;
+use nom::multi::separated_list1;
+use nom::sequence::preceded;
 use nom::sequence::tuple;
 use nom::sequence::Tuple;
 use nom::IResult;
 use nom::Parser;
+use opencv::videostab::NullFrameSource;
 use serde::Deserialize;
 use serde::Serialize;
 use std::net::SocketAddr;
@@ -47,7 +53,15 @@ use twitch_irc::TwitchIRCClient;
 // use tokio::sync::mpsc::UnboundedSender;
 // use asciibear::helpers::spawn;
 // use asciibear::stream_manager::start;
+use axum::{
+    body::{Bytes, Full},
+    // response::Html,
+    response::Response,
+    // routing::get,
+    // Router,
+};
 use std::collections::HashSet;
+use std::fs;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -70,6 +84,7 @@ async fn main() {
         .route("/", get(index))
         .route("/script.js", get(scriptjs))
         .route("/xstate.js", get(xstate))
+        .route("/lodash.js", get(xstate))
         .route("/bears.json", get(bears))
         .route("/ws", get(page_websocket_handler))
         // .layer(LiveReloadLayer::new())
@@ -80,16 +95,27 @@ async fn main() {
         .await;
 }
 
+async fn scriptjs() -> Response<Full<Bytes>> {
+    Response::builder()
+        .header("Content-Type", "text/javascript")
+        .body(Full::from(fs::read_to_string("html/script.js").unwrap()))
+        .unwrap()
+}
+
 async fn index() -> Html<&'static str> {
     Html(std::include_str!("../html/index.html"))
 }
 
-async fn scriptjs() -> Html<&'static str> {
-    Html(std::include_str!("../html/script.js"))
-}
+// async fn scriptjs() -> Html<&'static str> {
+//     Html(std::include_str!("../html/script.js"))
+// }
 
 async fn xstate() -> Html<&'static str> {
     Html(std::include_str!("../html/xstate.js"))
+}
+
+async fn lodash() -> Html<&'static str> {
+    Html(std::include_str!("../html/lodash_4_17_15.min.js"))
 }
 
 async fn bears() -> Html<&'static str> {
@@ -205,6 +231,7 @@ pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> 
             //     tbs.value = Some(format!("Hi {}!", payload.clone().sender.name));
             //     Some(serde_json::to_string(&tbs).unwrap())
             // }
+            _ => None,
         },
     }
 }
@@ -214,6 +241,7 @@ pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> 
 // !bear palette: asdf
 
 pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
+    dbg!(&source);
     let (source, cmd) = opt(alt((
         bear_command,
         bear_command,
@@ -225,6 +253,7 @@ pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<Twitc
         // twitch_say_hi,
         // twitch_say_hi,
     )))(source)?;
+    dbg!(&cmd);
     Ok((source, cmd))
 }
 
@@ -261,66 +290,208 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
-    // BearBody(Color),
-    // BearHead(Color),
-    // BearEyes(Color),
-    // BearKeys(Color),
-    // BearBgColor(Color),
-    // SayHi,
+    ChangeBearColors(Vec<BearColor>),
     None,
 }
 
-// fn read_twitch(
-//     source: &str,
-//     payload: twitch_irc::message::PrivmsgMessage,
-// ) -> IResult<&str, Option<TwitchCommand>> {
-//     dbg!(payload);
-//     let (source, cmd) = opt(alt((
-//         bear_command,
-//         bear_command,
-//         // twitch_bear_body,
-//         // twitch_bear_head,
-//         // twitch_bear_keys,
-//         // twitch_bear_eyes,
-//         // twitch_bearbg_color
-//         // twitch_say_hi,
-//         // twitch_say_hi,
-//     )))(source)?;
-//     Ok((source, cmd))
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum BearColor {
+    Body(Option<String>),
+    Eyes(Option<String>),
+    Head(Option<String>),
+    Keys(Option<String>),
+    None,
+}
+
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// pub enum BearInstruction {
+//     None,
 // }
 
 fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, _) = tag_no_case("!bear")(source)?;
+    dbg!(&source);
+    let (source, cmd) = preceded(tag_no_case("!bear "), bear_command_list)(source)?;
+    dbg!(&cmd);
+    // let (source, _) = tag_no_case("!bear")(source)?;
+    // let (source, _) = opt(tag(":"))(source)?;
+    // let (source, _) = space1(source)?;
+    // let (source, colors) = separated_list1(tag(","), bear_color)(source)?;
+    // // let (source, colors) = many1(alt((head_color, body_color, keys_color, eyes_color)))(source)?;
+    // dbg!(&colors);
+    Ok((source, TwitchCommand::None))
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum Color {
+    Hex(String),
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum BodyPart {
+    Head,
+    Body,
+    Keys,
+    Eyes,
+    None,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum BearCommand {
+    Cmd((BodyPart, Color)),
+    None,
+}
+
+fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
+    dbg!(&source);
+    let (source, cmds) = separated_list1(tag(", "), bear_command_prep)(source)?;
+    dbg!(&source);
+    dbg!(&cmds);
+    Ok((source, cmds))
+}
+
+fn colon_separator(source: &str) -> IResult<&str, &str> {
     let (source, _) = opt(tag(":"))(source)?;
     let (source, _) = space1(source)?;
-    let (source, instructions) = many1(bear_instruction)(source)?;
-    Ok(("", TwitchCommand::None))
+    Ok((source, ""))
+}
+
+fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
+    let (source, cmd) = tuple((body_part, colon_separator, hex_color))(source)?;
+    Ok((source, BearCommand::Cmd((cmd.0, cmd.2))))
+}
+
+fn body_part(source: &str) -> IResult<&str, BodyPart> {
+    let (source, part) = alt((part_head, part_body, part_keys, part_eyes))(source)?;
+    Ok((source, part))
+}
+
+fn part_head(source: &str) -> IResult<&str, BodyPart> {
+    let (source, _) = tag("head")(source)?;
+    Ok((source, BodyPart::Head))
+}
+
+fn part_eyes(source: &str) -> IResult<&str, BodyPart> {
+    let (source, _) = tag("eyes")(source)?;
+    Ok((source, BodyPart::Eyes))
+}
+
+fn part_keys(source: &str) -> IResult<&str, BodyPart> {
+    let (source, _) = tag("keys")(source)?;
+    Ok((source, BodyPart::Keys))
+}
+
+fn part_body(source: &str) -> IResult<&str, BodyPart> {
+    let (source, _) = tag("body")(source)?;
+    Ok((source, BodyPart::Body))
+}
+
+fn hex_color(source: &str) -> IResult<&str, Color> {
+    let (source, x) = tuple((
+        tag("#"),
+        hex_digit0,
+        hex_digit0,
+        hex_digit0,
+        hex_digit0,
+        hex_digit0,
+        hex_digit0,
+    ))(source)?;
+    let clr = Color::Hex(format!("{}{}{}{}{}{}{}", x.0, x.1, x.2, x.3, x.4, x.5, x.6));
+    Ok((source, clr))
 }
 
 // !bear eyes: asdf asdf, body: werwer,
 
-fn bear_instruction(source: &str) -> IResult<&str, BearInstruction> {
-    let (source, instruction) = tuple((
-        alt((
-            tag_no_case("head"),
-            tag_no_case("body"),
-            tag_no_case("eyes"),
-            tag_no_case("keys"),
-        )),
-        tag(":"),
-        space0,
-        alt((take_until(","), rest)),
-        opt(tag(",")),
-    ))(source)?;
+// fn bear_color(source: &str) -> IResult<&str, BearColor> {
+//     dbg!(&source);
+//     let (source, bc) = alt((head_color, body_color))(source)?;
+//     Ok((source, BearColor::None))
+// }
 
-    dbg!(&instruction);
+// fn bear_color(source: &str) -> IResult<&str, BearColor> {
+//     dbg!(&source);
+//     let (source, bc) = tuple((
+//         space0,
+//         alt((
+//             tag("head").map(|_| BearColor::Head(None)),
+//             tag("body").map(|_| BearColor::Body(None)),
+//             tag("keys").map(|_| BearColor::Keys(None)),
+//             tag("eyes").map(|_| BearColor::Eyes(None)),
+//         )),
+//         opt(tag(":")),
+//         space1,
+//         is_not(","),
+//     )).map(|x|
+//         )(source)?;
+//     dbg!(&source);
+//     dbg!(&bc);
+//     Ok((source, BearColor::None))
+// }
 
-    Ok(("", BearInstruction::None))
-}
+// fn bear_color(source: &str) -> IResult<&str, BearColor> {
+//     let (source, color) = tuple((
+//         alt((
+//             tag_no_case("head"),
+//             tag_no_case("body"),
+//             tag_no_case("eyes"),
+//             tag_no_case("keys"),
+//         )),
+//         tag(":"),
+//         space0,
+//         alt((take_until(","), rest)),
+//         opt(tag(",")),
+//     ))(source)?;
+//     dbg!(&color);
+//     Ok(("", BearColor::None))
+// }
 
-pub enum BearInstruction {
-    None,
-}
+// pub fn head_color(source: &str) -> IResult<&str, BearColor> {
+//     let (source, color) = tuple((
+//         tag_no_case("head"),
+//         opt(tag(":")),
+//         space0,
+//         alt((is_not(","), eof)),
+//         opt(tag(",")),
+//         space0,
+//     ))(source)?;
+//     Ok(("", BearColor::Head("#234234".to_string())))
+// }
+
+// pub fn eyes_color(source: &str) -> IResult<&str, BearColor> {
+//     let (source, color) = tuple((
+//         tag_no_case("eyes"),
+//         opt(tag(":")),
+//         space0,
+//         alt((is_not(","), eof)),
+//         opt(tag(",")),
+//         space0,
+//     ))(source)?;
+//     Ok(("", BearColor::Eyes("#234234".to_string())))
+// }
+
+// pub fn keys_color(source: &str) -> IResult<&str, BearColor> {
+//     let (source, color) = tuple((
+//         tag_no_case("keys"),
+//         opt(tag(":")),
+//         space0,
+//         alt((is_not(","), eof)),
+//         opt(tag(",")),
+//         space0,
+//     ))(source)?;
+//     Ok(("", BearColor::Keys("#234234".to_string())))
+// }
+
+// pub fn body_color(source: &str) -> IResult<&str, BearColor> {
+//     dbg!(source);
+//     let (source, color) = tuple((
+//         tag_no_case("body"),
+//         opt(tag(":")),
+//         space0,
+//         alt((is_not(","), eof)),
+//         opt(tag(",")),
+//         space0,
+//     ))(source)?;
+//     Ok(("", BearColor::Body("#234234".to_string())))
+// }
 
 // fn twitch_say_hi(source: &str) -> IResult<&str, TwitchCommand> {
 //     Ok((source, TwitchCommand::SayHi))

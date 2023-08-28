@@ -1,107 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ASCII_Bear</title>
-    <script src="xstate.js"></script>
-    <script src="script.js"></script>
-    <style>
-      *,
-      *::before,
-      *::after {
-        margin: 0;
-      }
 
-      * {
-        box-sizing: border-box;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII_Bear</title>
+  <script src="xstate.js"></script>
+  <script src="lodash.js"></script>
+  <script src="script.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+    }
 
-      body {
-        padding: 0;
-        margin: 0;
-        background-color: #000;
-        color: goldenrod;
-        font-family: monospace;
-        font-size: 1rem;
-      }
+    * {
+      box-sizing: border-box;
+    }
 
-      input {
-        background-color: #333;
-        color: white;
-      }
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #000;
+      color: goldenrod;
+      font-family: monospace;
+      font-size: 1rem;
+    }
 
-      .pixel {
-        font-family: monospace;
-        min-width: 1.1ch;
-        max-width: 1.1ch;
-        height: 1.5rem;
-        padding: 0;
-        border: 0;
-        margin: 0;
-      }
+    input {
+      background-color: #333;
+      color: white;
+    }
 
-      table {
-        border-collapse: collapse;
-      }
+    .pixel {
+      font-family: monospace;
+      min-width: 1.1ch;
+      max-width: 1.1ch;
+      height: 1.5rem;
+      padding: 0;
+      border: 0;
+      margin: 0;
+    }
 
-      .hottub-water {
-        color: #87a8e0;
-      }
+    table {
+      border-collapse: collapse;
+    }
 
-      .hottub-border {
-        color: #bf7737;
-      }
+    .hottub-water {
+      color: #87a8e0;
+    }
 
-      #canvasFrame {
-        display: grid;
-      }
+    .hottub-border {
+      color: #bf7737;
+    }
 
-      .frameLayer {
-        grid-row: 1;
-        grid-column: 1;
-      }
+    #canvasFrame {
+      display: grid;
+    }
 
-      #canvasBackground1 {
-        font-size: 0.7rem;
-        margin: 2rem;
-        color: blue;
-      }
+    .frameLayer {
+      grid-row: 1;
+      grid-column: 1;
+    }
 
-      #canvasBackground2 {
-        font-size: 0.7rem;
-        margin: 2.4rem;
-        color: green;
-      }
+    #canvasBackground1 {
+      font-size: 0.7rem;
+      margin: 2rem;
+      color: blue;
+    }
 
-      .activePixel {
-        background-color: black;
-      }
+    #canvasBackground2 {
+      font-size: 0.7rem;
+      margin: 2.4rem;
+      color: green;
+    }
 
-      .forward-head-mat,
-      .looking-head-mat,
-      .hottub-border-mat,
-      .speech-bubble-mat
-      {
-        color: black;
-      }
+    .activePixel {
+      background-color: black;
+    }
 
-      #speechDiv {
-        margin-left: 8.6rem;
-        margin-top: 1.8rem;
-        font-size: 2.7rem;
-      }
-    </style>
-  </head>
+    .forward-head-mat,
+    .looking-head-mat,
+    .hottub-border-mat,
+    .speech-bubble-mat,
+    .mouse-active-mat {
+      color: black;
+    }
 
-  <body>
-    <main>
-      <div id="canvasFrame">
-        <div id="canvasBackground1" class="frameLayer"></div>
-        <div id="canvasBackground2" class="frameLayer"></div>
-        <div id="bear" class="frameLayer"></div>
-        <div id="speechBubble" class="frameLayer"></div>
-      </div>
-    </main>
-  </body>
+    #speechDiv {
+      margin-left: 8.6rem;
+      margin-top: 1.8rem;
+      font-size: 2.7rem;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <div id="canvasFrame">
+      <div id="canvasBackground1" class="frameLayer"></div>
+      <div id="canvasBackground2" class="frameLayer"></div>
+      <div id="bear" class="frameLayer"></div>
+      <div id="speechBubble" class="frameLayer"></div>
+    </div>
+  </main>
+</body>
+
 </html>

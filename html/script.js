@@ -1,6 +1,7 @@
 const { assign, createMachine, interpret, actions, send } = XState
 const { log } = actions
 
+
 const theGrid = []
 let layers = []
 
@@ -501,6 +502,7 @@ const machine = createMachine(
                     visibleLayers: (context) => {
                       const newLayers = [...context.visibleLayers]
                       if (context.isMousing && !context.isTyping) {
+                        newLayers.push(pickLayer('mouse-active-mat'))
                         newLayers.push(context.lastActiveMouse)
                       } else {
                         newLayers.push(pickLayer('mouse-inactive'))
@@ -622,7 +624,7 @@ const machine = createMachine(
                 after: [
                   {
                     delay: () => {
-                      return Math.floor(Math.random() * 33) + 90
+                      return Math.floor(Math.random() * 33) + 98
                     },
                     target: 'start_update',
                   },
