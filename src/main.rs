@@ -38,7 +38,7 @@ use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-// use tower_http::services::ServeDir;
+use tower_http::services::ServeDir;
 // use tower_livereload::LiveReloadLayer;
 // use asciibear::connection::Connection;
 // use asciibear::screen_capture::screen_capture;
@@ -80,13 +80,13 @@ async fn main() {
     // let _screen_capture = tokio::spawn(screen_capture(tx.clone()));
     let app_state = Arc::new(AppState { tx });
     let app = Router::new()
-        //.nest_service("/", ServeDir::new("html"))
-        .route("/", get(index))
-        .route("/script.js", get(scriptjs))
-        .route("/xstate.js", get(xstate))
-        .route("/lodash.js", get(xstate))
-        .route("/bears.json", get(bears))
         .route("/ws", get(page_websocket_handler))
+        .nest_service("/", ServeDir::new("html"))
+        // .route("/", get(index))
+        // .route("/script.js", get(scriptjs))
+        // .route("/xstate.js", get(xstate))
+        // .route("/lodash.js", get(lodash))
+        // .route("/bears.json", get(bears))
         // .layer(LiveReloadLayer::new())
         .with_state(app_state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 3302));
@@ -95,28 +95,37 @@ async fn main() {
         .await;
 }
 
-async fn scriptjs() -> Response<Full<Bytes>> {
-    Response::builder()
-        .header("Content-Type", "text/javascript")
-        .body(Full::from(fs::read_to_string("html/script.js").unwrap()))
-        .unwrap()
-}
+// async fn lodash() -> Response<Full<Bytes>> {
+//     Response::builder()
+//         .header("Content-Type", "text/javascript")
+//         .body(Full::from(
+//             fs::read_to_string("html/lodash_4_17_15.min.js").unwrap(),
+//         ))
+//         .unwrap()
+// }
 
-async fn index() -> Html<&'static str> {
-    Html(std::include_str!("../html/index.html"))
-}
+// async fn scriptjs() -> Response<Full<Bytes>> {
+//     Response::builder()
+//         .header("Content-Type", "text/javascript")
+//         .body(Full::from(fs::read_to_string("html/script.js").unwrap()))
+//         .unwrap()
+// }
+
+// async fn index() -> Html<&'static str> {
+//     Html(std::include_str!("../html/index.html"))
+// }
 
 // async fn scriptjs() -> Html<&'static str> {
 //     Html(std::include_str!("../html/script.js"))
 // }
 
-async fn xstate() -> Html<&'static str> {
-    Html(std::include_str!("../html/xstate.js"))
-}
+// async fn xstate() -> Html<&'static str> {
+//     Html(std::include_str!("../html/xstate.js"))
+// }
 
-async fn lodash() -> Html<&'static str> {
-    Html(std::include_str!("../html/lodash_4_17_15.min.js"))
-}
+// async fn lodash() -> Html<&'static str> {
+//     Html(std::include_str!("../html/lodash_4_17_15.min.js"))
+// }
 
 async fn bears() -> Html<&'static str> {
     Html(std::include_str!("../html/bears.json"))

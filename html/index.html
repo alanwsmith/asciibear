@@ -5,9 +5,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASCII_Bear</title>
-  <script src="xstate.js"></script>
-  <script src="lodash.js"></script>
-  <script src="script.js"></script>
+  <!-- <script src="xstate.js"></script> -->
+  <!-- <script src="lodash.js"></script> -->
+  <!-- <script src="script.js"></script> -->
+  <script type="module">
+    import {Bear} from "/scripts/bear.js"
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const b = new Bear()
+      b.go()
+    })
+  </script>
   <style>
     *,
     *::before,

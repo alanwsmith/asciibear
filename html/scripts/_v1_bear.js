@@ -1,3 +1,12 @@
+class Bear {
+  constructor() {
+
+  }
+}
+
+export { Bear }
+
+
 const { assign, createMachine, interpret, actions, send } = XState
 const { log } = actions
 
