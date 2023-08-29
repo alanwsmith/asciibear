@@ -16,7 +16,9 @@ class Bear {
     this.ws = null
     this.gridBgRows = 42
     this.gridBgCols = 130
-    this.wsMic = throttle(this.wsMic.bind(this), 50)
+    this.wsMic = throttle(this.throttleMic.bind(this), 5)
+    this.wsMouse = throttle(this.throttleMouse.bind(this), 5)
+    this.wsKeyboard = throttle(this.throttleKeyboard.bind(this), 5)
     this.machine = createMachine(
       {
         predictableActionArguments: true,
@@ -32,7 +34,7 @@ class Bear {
           countdown_water: 0,
           countdown_speech_bubble: 0,
           isMousing: false,
-          isMousingBuffer: 0,
+          // isMousingBuffer: 0,
           isTalking: false,
           isTyping: false,
           lastActiveKeyboard: null,
@@ -68,7 +70,7 @@ class Bear {
                     entry: [
                       assign({
                         isMousing: false,
-                        isMousingBuffer: 0,
+                        // isMousingBuffer: 0,
                       }),
                     ],
                   },
@@ -76,15 +78,15 @@ class Bear {
                     on: { STARTMOUSING: { target: ['mouseMoving'] } },
                     entry: [
                       assign({
-                        isMousingBuffer: (context) => {
-                          return context.isMousingBuffer + 1
-                        },
+                        // isMousingBuffer: (context) => {
+                        //   return context.isMousingBuffer + 1
+                        // },
                         isMousing: (context) => {
-                          if (context.isMousingBuffer > 10) {
+                          // if (context.isMousingBuffer > 10) {
                             return true
-                          } else {
-                            return false
-                          }
+                          // } else {
+                          //   return false
+                          // }
                         },
                       }),
                     ],
@@ -808,16 +810,18 @@ class Bear {
     }
 
     this.ws.onmessage = (event) => {
+      // console.log(event)
       const payload = JSON.parse(event.data)
       if (payload.key === 'dB') {
         if (payload.value > 0.007) {
-          // this.actor.send({ type: 'STARTTALKING' })
-          this.wsMic({ type: 'STARTTALKING' })
+          this.throttleMic({ type: 'STARTTALKING' })
         }
       } else if (payload.key === 'key') {
-        this.actor.send({ type: 'STARTTYPING' })
+        this.throttleKeyboard({ type: 'STARTTYPING' })
+
       } else if (payload.key === 'mousemove') {
-        this.actor.send({ type: 'STARTMOUSING' })
+        console.log(payload.value)
+        this.throttleMouse({ type: 'STARTMOUSING' })
       } else if (payload.key === 'bearbody') {
         console.log(payload)
         const newStyleSheet = document.createElement('style')
@@ -857,7 +861,7 @@ class Bear {
         document.head.appendChild(newStyleSheet)
       } else if (payload.key === 'sayhi') {
         console.log('Got Rust Message To Say Hi')
-        actor.send({ type: 'SAYHI', name: payload.value })
+        // actor.send({ type: 'SAYHI', name: payload.value })
       } else if (payload.key === 'screen_position') {
       } else if (payload.key === 'test') {
         console.log(payload)
@@ -879,8 +883,14 @@ class Bear {
       })
   }
 
-  wsMic(payload) {
-    this.actor.send({ type: 'STARTTALKING' })
+  throttleKeyboard(payload) {
+    this.actor.send(payload)
+  }
+  throttleMic(payload) {
+    this.actor.send(payload)
+  }
+  throttleMouse(payload) {
+    this.actor.send(payload)
   }
 
 }

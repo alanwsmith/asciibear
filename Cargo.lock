@@ -73,6 +73,7 @@ dependencies = [
  "cpal",
  "device_query",
  "futures",
+ "lazy_static",
  "nom",
  "opencv",
  "rml_rtmp",
