@@ -62,6 +62,7 @@ use axum::{
 };
 use std::collections::HashSet;
 use std::fs;
+use std::sync::Mutex;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -190,12 +191,26 @@ pub enum MouseSend {
 
 async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mouse_watcher connection");
+    let mut counterrrr = Arc::new(Mutex::new(0_u32));
     let device_state = DeviceState::new();
+
     let _guard = device_state.on_mouse_move(move |x| {
-        let payload = MouseSend::MouseMove(x.0, x.1);
-        let package = serde_json::to_string(&payload).unwrap();
-        let _ = tx.send(package);
+        let internal_c = counterrrr.clone();
+        let mut changer = internal_c.lock().unwrap();
+        *changer += 1;
+        if changer.rem_euclid(30) == 0 {
+            let payload = MouseSend::MouseMove(x.0, x.1);
+            let package = serde_json::to_string(&payload).unwrap();
+            let _ = tx.send(package);
+        }
     });
+
+    // let _guard = device_state.on_mouse_move(move |x| {
+    //     let payload = MouseSend::MouseMove(x.0, x.1);
+    //     let package = serde_json::to_string(&payload).unwrap();
+    //     let _ = tx.send(package);
+    // });
+
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
