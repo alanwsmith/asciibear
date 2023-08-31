@@ -29,6 +29,7 @@ use nom::multi::many1;
 use nom::multi::separated_list1;
 use nom::sequence::pair;
 use nom::sequence::preceded;
+use nom::sequence::terminated;
 use nom::sequence::tuple;
 use nom::sequence::Tuple;
 use nom::IResult;
@@ -264,23 +265,6 @@ pub enum TwitchCommand {
     SayHi(String),
 }
 
-// #[derive(Debug, PartialEq, Serialize, Deserialize)]
-// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
-// pub enum TwitchCommand {
-//     Body(Option<String>),
-//     Eyes(Option<String>),
-//     Head(Option<String>),
-//     Keys(Option<String>),
-//     None,
-// }
-
-// fn bear_colors(source: &str) -> IResult<&str, TwitchCommand> {
-//     let (source, cmds) =
-//         preceded(tag_no_case("!bear "), separated_list1(tag(","), bear_color))(source)?;
-//     dbg!(&cmds);
-//     Ok((source, TwitchCommand::TwitchCommands(cmds)))
-// }
-
 fn bear_color(source: &str) -> IResult<&str, TwitchCommand> {
     let (source, color) = alt((
         bear_color_head,
@@ -288,41 +272,8 @@ fn bear_color(source: &str) -> IResult<&str, TwitchCommand> {
         bear_color_keys,
         bear_color_body,
     ))(source)?;
-    // let (source, cmd) = tuple((tag("!"), body_part, space1, get_color_by_name))(source)?;
-    // match cmd.2 {
-    //     Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
-    //     None => Ok((source, BearCommand::None)),
-    // }
     Ok((source, color))
 }
-
-// #[derive(Debug, PartialEq, Serialize, Deserialize)]
-// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
-// pub enum TwitchCommand {
-//     Head,
-//     Body,
-//     Keys,
-//     Eyes,
-//     None,
-// }
-
-// #[derive(Debug, PartialEq, Serialize, Deserialize)]
-// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
-// pub enum BearCommand {
-//     Color((TwitchCommand, [u8; 3])),
-//     None,
-// }
-
-// fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
-//     let (source, cmds) = separated_list1(tag(", "), bear_command_prep)(source)?;
-//     Ok((source, cmds))
-// }
-
-// fn colon_separator(source: &str) -> IResult<&str, &str> {
-//     let (source, _) = opt(tag(":"))(source)?;
-//     let (source, _) = space0(source)?;
-//     Ok((source, ""))
-// }
 
 fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
     let (source, check_color) = is_not(" ")(source)?;
@@ -332,21 +283,8 @@ fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
     }
 }
 
-// fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
-//     let (source, cmd) = tuple((body_part, colon_separator, get_color_by_name))(source)?;
-//     match cmd.2 {
-//         Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
-//         None => Ok((source, BearCommand::None)),
-//     }
-// }
-
-// fn body_part(source: &str) -> IResult<&str, TwitchCommand> {
-//     let (source, part) = alt((part_head, part_body, part_keys, part_eyes))(source)?;
-//     Ok((source, part))
-// }
-
 fn rgb_color(source: &str) -> IResult<&str, [u8; 3]> {
-    let (source, color_string) = is_not(" ")(source)?;
+    let (source, color_string) = terminated(is_not(" "), space0)(source)?;
     let rgb = Color::val()
         .by_string(color_string.trim().to_string())
         .unwrap();
