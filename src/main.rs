@@ -27,6 +27,7 @@ use nom::combinator::opt;
 use nom::combinator::rest;
 use nom::multi::many1;
 use nom::multi::separated_list1;
+use nom::sequence::pair;
 use nom::sequence::preceded;
 use nom::sequence::tuple;
 use nom::sequence::Tuple;
@@ -214,52 +215,8 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 
-//#[derive(Debug, PartialEq, Serialize, Deserialize)]
-
-// pub struct TwitchShipment {
-//     key: Option<String>,
-//     value: Option<String>,
-//     // sender: Option<String>,
-// }
-
-// impl TwitchShipment {
-//     pub fn new() -> TwitchShipment {
-//         TwitchShipment {
-//             key: None,
-//             value: None,
-//             // sender: None,
-//         }
-//     }
-// }
-
-// pub fn assemble_twitch_message(
-//     payload: twitch_irc::message::PrivmsgMessage,
-// ) -> Option<TwitchCommand> {
-//     let stuff = parse_incoming_twitch_message(payload.clone().message_text.as_str())
-//         .unwrap()
-//         .1;
-//     dbg!(&stuff);
-//     let mut twitch_shipment = TwitchShipment::new();
-//     // tbs.sender = Some(payload.clone().sender.name);
-//     match stuff {
-//         None => None,
-//         Some(junk) => match junk {
-//             TwitchCommand::None => None,
-//             // TwitchCommand::SayHi => {
-//             //     tbs.key = Some("sayhi".to_string());
-//             //     tbs.value = Some(format!("Hi {}!", payload.clone().sender.name));
-//             //     Some(serde_json::to_string(&tbs).unwrap())
-//             // }
-//             _ => None,
-//         },
-//     }
-// }
-
-// !bear head: some color, keys: some color
-
-pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
-    //dbg!(&source);
-    let (source, cmd) = opt(alt((bear_command, bear_command)))(source)?;
+pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<Vec<TwitchCommand>>> {
+    let (source, cmd) = opt(many1(alt((bear_color, bear_color))))(source)?;
     dbg!(&cmd);
     Ok((source, cmd))
 }
@@ -275,18 +232,18 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
                 twitch_irc::message::ServerMessage::Privmsg(payload) => {
                     if !said_hello_to.contains(&payload.sender.name) {
                         said_hello_to.insert(payload.clone().sender.name);
-
                         let tbs =
                             TwitchCommand::SayHi(format!("Hi {}!", payload.clone().sender.name));
-
                         let _ = tx.send(serde_json::to_string(&tbs).unwrap());
                     }
-                    if let Some(twitch_shipment) =
+                    if let Some(twitch_commands) =
                         parse_incoming_twitch_message(payload.clone().message_text.as_str())
                             .unwrap()
                             .1
                     {
-                        let _ = tx.send(serde_json::to_string(&twitch_shipment).unwrap());
+                        twitch_commands.into_iter().for_each(|tc| {
+                            let _ = tx.send(serde_json::to_string(&tc).unwrap());
+                        })
                     }
                 }
                 _ => {}
@@ -300,93 +257,120 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
-    Bear(Vec<BearCommand>),
+    BearColorHead([u8; 3]),
+    BearColorKeys([u8; 3]),
+    BearColorEyes([u8; 3]),
+    BearColorBody([u8; 3]),
     SayHi(String),
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "key", content = "value", rename_all = "lowercase")]
-pub enum BearColor {
-    Body(Option<String>),
-    Eyes(Option<String>),
-    Head(Option<String>),
-    Keys(Option<String>),
-    None,
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
+// pub enum TwitchCommand {
+//     Body(Option<String>),
+//     Eyes(Option<String>),
+//     Head(Option<String>),
+//     Keys(Option<String>),
+//     None,
+// }
+
+// fn bear_colors(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, cmds) =
+//         preceded(tag_no_case("!bear "), separated_list1(tag(","), bear_color))(source)?;
+//     dbg!(&cmds);
+//     Ok((source, TwitchCommand::TwitchCommands(cmds)))
+// }
+
+fn bear_color(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, color) = alt((
+        bear_color_head,
+        bear_color_eyes,
+        bear_color_keys,
+        bear_color_body,
+    ))(source)?;
+    // let (source, cmd) = tuple((tag("!"), body_part, space1, get_color_by_name))(source)?;
+    // match cmd.2 {
+    //     Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
+    //     None => Ok((source, BearCommand::None)),
+    // }
+    Ok((source, color))
 }
 
-fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
-    let (source, cmds) = preceded(tag_no_case("!bear "), bear_command_list)(source)?;
-    dbg!(&cmds);
-    Ok((source, TwitchCommand::Bear(cmds)))
-}
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
+// pub enum TwitchCommand {
+//     Head,
+//     Body,
+//     Keys,
+//     Eyes,
+//     None,
+// }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "key", content = "value", rename_all = "lowercase")]
-pub enum BodyPart {
-    Head,
-    Body,
-    Keys,
-    Eyes,
-    None,
-}
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// #[serde(tag = "key", content = "value", rename_all = "lowercase")]
+// pub enum BearCommand {
+//     Color((TwitchCommand, [u8; 3])),
+//     None,
+// }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "key", content = "value", rename_all = "lowercase")]
-pub enum BearCommand {
-    Color((BodyPart, [u8; 3])),
-    None,
-}
+// fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
+//     let (source, cmds) = separated_list1(tag(", "), bear_command_prep)(source)?;
+//     Ok((source, cmds))
+// }
 
-fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
-    let (source, cmds) = separated_list1(tag(", "), bear_command_prep)(source)?;
-    Ok((source, cmds))
-}
-
-fn colon_separator(source: &str) -> IResult<&str, &str> {
-    let (source, _) = opt(tag(":"))(source)?;
-    let (source, _) = space0(source)?;
-    Ok((source, ""))
-}
+// fn colon_separator(source: &str) -> IResult<&str, &str> {
+//     let (source, _) = opt(tag(":"))(source)?;
+//     let (source, _) = space0(source)?;
+//     Ok((source, ""))
+// }
 
 fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
-    let (source, check_color) = is_not(",")(source)?;
+    let (source, check_color) = is_not(" ")(source)?;
     match Color::val().by_string(check_color.trim().to_string()) {
         Ok(rgb_data) => Ok((source, Some(rgb_data))),
         Err(_) => Ok((source, None)),
     }
 }
 
-fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
-    let (source, cmd) = tuple((body_part, colon_separator, get_color_by_name))(source)?;
-    match cmd.2 {
-        Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
-        None => Ok((source, BearCommand::None)),
-    }
+// fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
+//     let (source, cmd) = tuple((body_part, colon_separator, get_color_by_name))(source)?;
+//     match cmd.2 {
+//         Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
+//         None => Ok((source, BearCommand::None)),
+//     }
+// }
+
+// fn body_part(source: &str) -> IResult<&str, TwitchCommand> {
+//     let (source, part) = alt((part_head, part_body, part_keys, part_eyes))(source)?;
+//     Ok((source, part))
+// }
+
+fn rgb_color(source: &str) -> IResult<&str, [u8; 3]> {
+    let (source, color_string) = is_not(" ")(source)?;
+    let rgb = Color::val()
+        .by_string(color_string.trim().to_string())
+        .unwrap();
+    Ok((source, rgb))
 }
 
-fn body_part(source: &str) -> IResult<&str, BodyPart> {
-    let (source, part) = alt((part_head, part_body, part_keys, part_eyes))(source)?;
-    Ok((source, part))
+fn bear_color_head(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!head"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorHead(rgb)))
 }
 
-fn part_head(source: &str) -> IResult<&str, BodyPart> {
-    let (source, _) = tag("head")(source)?;
-    Ok((source, BodyPart::Head))
+fn bear_color_eyes(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!eyes"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorEyes(rgb)))
 }
 
-fn part_eyes(source: &str) -> IResult<&str, BodyPart> {
-    let (source, _) = tag("eyes")(source)?;
-    Ok((source, BodyPart::Eyes))
+fn bear_color_keys(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!keys"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorKeys(rgb)))
 }
 
-fn part_keys(source: &str) -> IResult<&str, BodyPart> {
-    let (source, _) = tag("keys")(source)?;
-    Ok((source, BodyPart::Keys))
-}
-
-fn part_body(source: &str) -> IResult<&str, BodyPart> {
-    let (source, _) = tag("body")(source)?;
-    Ok((source, BodyPart::Body))
+fn bear_color_body(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!body"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorBody(rgb)))
 }
 
 fn err_fn(err: cpal::StreamError) {
