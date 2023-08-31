@@ -33,7 +33,7 @@ use serde_json::json;
 
 pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Result<()> {
 
-    let window = "video capture";
+    let _window = "video capture";
     // highgui::named_window(window, highgui::WINDOW_AUTOSIZE)?;
     let mut cam = videoio::VideoCapture::from_file("rtmp://127.0.0.1:1935/a/b", videoio::CAP_ANY).unwrap();
     // // let mut cam = videoio::VideoCapture::from_file("rtmp://127.0.0.1:1935/a/b", videoio::CAP_ANY)?;
@@ -54,7 +54,7 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Resul
 
 
     let mut first: Mat = Default::default();
-    let mut second: Mat = Default::default();
+    // let mut second: Mat = Default::default();
 
     let mut loaded: bool = false;
 
@@ -76,7 +76,7 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Resul
             cam.read(&mut first).unwrap();
             loaded = true;
         } else {
-            second = first.clone();
+            let second = first.clone();
             cam.read(&mut first).unwrap();
             // cam.read(&mut first)?;
 
@@ -93,7 +93,8 @@ pub async fn screen_capture(tx: tokio::sync::broadcast::Sender<String>) -> Resul
 
             let _ = in_range(&second, &lower, &upper, &mut tmp);
 
-            let mut thresh = Mat::default();
+            // let mut thresh = Mat::default();
+            // let _thresh = Mat::default();
 
             let mut contours: VectorOfVectorOfPoint = Default::default();
 

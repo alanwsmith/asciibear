@@ -23,4 +23,6 @@ uuid = { version = "1.4.1", features = ["v4"] }
 bytes = "1"
 opencv = { version = "0.84.5", features = ["clang-runtime"] }
 clang = { version = "2.0.0", features = ["runtime"] }
+lazy_static = "1.4.0"
+color-name = "1.1.0"
 

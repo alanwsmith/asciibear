@@ -5,9 +5,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASCII_Bear</title>
-  <script src="xstate.js"></script>
-  <script src="script.js"></script>
+  <!-- <script src="xstate.js"></script> -->
+  <!-- <script src="lodash.js"></script> -->
+  <!-- <script src="script.js"></script> -->
+  <script type="module">
+    import {Bear} from "/scripts/bear.js"
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const b = new Bear()
+      b.start()
+    })
+  </script>
   <style>
+
+    
+
+
     *,
     *::before,
     *::after {
@@ -27,6 +40,11 @@
       font-size: 1rem;
     }
 
+    input {
+      background-color: #333;
+      color: white;
+    }
+
     .pixel {
       font-family: monospace;
       min-width: 1.1ch;
@@ -40,12 +58,64 @@
     table {
       border-collapse: collapse;
     }
+
+    .hottub-water {
+      color: #87a8e0;
+    }
+
+    .hottub-border {
+      color: #bf7737;
+    }
+
+    #canvasFrame {
+      display: grid;
+    }
+
+    .frameLayer {
+      grid-row: 1;
+      grid-column: 1;
+    }
+
+    #canvasBackground1 {
+      font-size: 0.7rem;
+      margin: 2rem;
+      color: blue;
+    }
+
+    #canvasBackground2 {
+      font-size: 0.7rem;
+      margin: 2.4rem;
+      color: green;
+    }
+
+    .activePixel {
+      background-color: black;
+    }
+
+    .forward-head-mat,
+    .looking-head-mat,
+    .hottub-border-mat,
+    .speech-bubble-mat,
+    .mouse-active-mat {
+      color: black;
+    }
+
+    #speechDiv {
+      margin-left: 8.6rem;
+      margin-top: 1.8rem;
+      font-size: 2.7rem;
+    }
   </style>
 </head>
 
 <body>
   <main>
-    <div id="bear"></div>
+    <div id="canvasFrame">
+      <div id="canvasBackground1" class="frameLayer"></div>
+      <div id="canvasBackground2" class="frameLayer"></div>
+      <div id="bear" class="frameLayer"></div>
+      <div id="speechBubble" class="frameLayer"></div>
+    </div>
   </main>
 </body>
 
