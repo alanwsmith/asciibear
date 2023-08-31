@@ -144,17 +144,23 @@ async fn key_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 
 async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mic_listener connection");
+    let mut mic_throttle = Arc::new(Mutex::new(0_u32));
     let host = cpal::default_host();
     let device = host
         .default_input_device()
         .expect("no input device available");
     let config: cpal::StreamConfig = device.default_input_config().unwrap().into();
     let input_sender = move |data: &[f32], _cb: &cpal::InputCallbackInfo| {
-        let x: f32 = data[0];
-        let mut payload = r#"{"key": "dB", "value": "#.to_string();
-        payload.push_str(x.to_string().as_str());
-        payload.push_str(r#"}"#);
-        let _ = tx.send(payload);
+        let check_throttle = mic_throttle.clone();
+        let mut throttle_count = check_throttle.lock().unwrap();
+        *throttle_count += 1;
+        if throttle_count.rem_euclid(3) == 0 {
+            let x: f32 = data[0];
+            let mut payload = r#"{"key": "dB", "value": "#.to_string();
+            payload.push_str(x.to_string().as_str());
+            payload.push_str(r#"}"#);
+            let _ = tx.send(payload);
+        }
     };
     let input_stream = device
         .build_input_stream(&config, input_sender, err_fn, None)
@@ -193,7 +199,6 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
     dbg!("mouse_watcher connection");
     let mut counterrrr = Arc::new(Mutex::new(0_u32));
     let device_state = DeviceState::new();
-
     let _guard = device_state.on_mouse_move(move |x| {
         let internal_c = counterrrr.clone();
         let mut changer = internal_c.lock().unwrap();
@@ -204,13 +209,6 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
             let _ = tx.send(package);
         }
     });
-
-    // let _guard = device_state.on_mouse_move(move |x| {
-    //     let payload = MouseSend::MouseMove(x.0, x.1);
-    //     let package = serde_json::to_string(&payload).unwrap();
-    //     let _ = tx.send(package);
-    // });
-
     std::thread::sleep(std::time::Duration::from_secs(32536000));
 }
 

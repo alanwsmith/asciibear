@@ -4,7 +4,6 @@ import {
   interpret,
   log,
 } from '/scripts/xstate_4_38_2_dist_web.js'
-import throttle from "./lodash/modularize/throttle.js"
 
 class Bear {
   constructor() {
@@ -16,9 +15,6 @@ class Bear {
     this.ws = null
     this.gridBgRows = 42
     this.gridBgCols = 130
-    this.wsMic = throttle(this.throttleMic.bind(this), 5)
-    this.wsMouse = throttle(this.throttleMouse.bind(this), 5)
-    this.wsKeyboard = throttle(this.throttleKeyboard.bind(this), 5)
     this.machine = createMachine(
       {
         predictableActionArguments: true,
@@ -814,16 +810,15 @@ class Bear {
       const payload = JSON.parse(event.data)
       if (payload.key === 'dB') {
         if (payload.value > 0.007) {
-          this.throttleMic({ type: 'STARTTALKING' })
+          this.actor.send({ type: 'STARTTALKING' })
         }
       } else if (payload.key === 'key') {
-        this.throttleKeyboard({ type: 'STARTTYPING' })
+        this.actor.send({ type: 'STARTTYPING' })
 
       } else if (payload.key === 'mousemove') {
-        console.log(payload.value)
-        this.throttleMouse({ type: 'STARTMOUSING' })
+        this.actor.send({ type: 'STARTMOUSING' })
       } else if (payload.key === 'bearbody') {
-        console.log(payload)
+        // console.log(payload)
         const newStyleSheet = document.createElement('style')
         const newStyleText = document.createTextNode(
           `.forward-shoulders-base, .looking-shoulders-base {
@@ -860,8 +855,8 @@ class Bear {
         newStyleSheet.appendChild(newStyleText)
         document.head.appendChild(newStyleSheet)
       } else if (payload.key === 'sayhi') {
-        console.log('Got Rust Message To Say Hi')
-        // actor.send({ type: 'SAYHI', name: payload.value })
+        // console.log('Got Rust Message To Say Hi')
+        this.actor.send({ type: 'SAYHI', name: payload.value })
       } else if (payload.key === 'screen_position') {
       } else if (payload.key === 'test') {
         console.log(payload)
@@ -882,17 +877,6 @@ class Bear {
         this.actor.send({ type: 'KICKOFF' })
       })
   }
-
-  throttleKeyboard(payload) {
-    this.actor.send(payload)
-  }
-  throttleMic(payload) {
-    this.actor.send(payload)
-  }
-  throttleMouse(payload) {
-    this.actor.send(payload)
-  }
-
 }
 
 export { Bear }
