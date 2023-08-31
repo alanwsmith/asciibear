@@ -13,3 +13,8 @@ More details here:
 [alanwsmith.com/asciibear](https://www.alanwsmith.com/asciibear/index.html)
 
 
+-- notes
+
+- There's a throttle in the javascript for the mic
+and mouse, but it's not really being used. Things
+are throttled on the rust side
