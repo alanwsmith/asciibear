@@ -63,6 +63,7 @@ use axum::{
 use std::collections::HashSet;
 use std::fs;
 use std::sync::Mutex;
+extern crate color_name;
 
 struct AppState {
     tx: broadcast::Sender<String>,
@@ -263,7 +264,7 @@ pub fn assemble_twitch_message(payload: twitch_irc::message::PrivmsgMessage) -> 
 // !bear palette: asdf
 
 pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
-    dbg!(&source);
+    //dbg!(&source);
     let (source, cmd) = opt(alt((
         bear_command,
         bear_command,
@@ -275,6 +276,7 @@ pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<Twitc
         // twitch_say_hi,
         // twitch_say_hi,
     )))(source)?;
+    // dbg!(&cmd);
     dbg!(&cmd);
     Ok((source, cmd))
 }
@@ -331,9 +333,9 @@ pub enum BearColor {
 // }
 
 fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
-    dbg!(&source);
+    // dbg!(&source);
     let (source, cmd) = preceded(tag_no_case("!bear "), bear_command_list)(source)?;
-    dbg!(&cmd);
+    // dbg!(&cmd);
     // let (source, _) = tag_no_case("!bear")(source)?;
     // let (source, _) = opt(tag(":"))(source)?;
     // let (source, _) = space1(source)?;
@@ -343,10 +345,10 @@ fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
     Ok((source, TwitchCommand::None))
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum Color {
-    Hex(String),
-}
+// #[derive(Debug, PartialEq, Serialize, Deserialize)]
+// pub enum Color {
+//     Hex(String),
+// }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum BodyPart {
@@ -359,27 +361,35 @@ pub enum BodyPart {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum BearCommand {
-    Cmd((BodyPart, Color)),
+    Cmd((BodyPart, [u8; 3])),
     None,
 }
 
 fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
-    dbg!(&source);
+    // dbg!(&source);
     let (source, cmds) = separated_list1(tag(", "), bear_command_prep)(source)?;
-    dbg!(&source);
-    dbg!(&cmds);
+    // dbg!(&source);
+    // dbg!(&cmds);
     Ok((source, cmds))
 }
 
 fn colon_separator(source: &str) -> IResult<&str, &str> {
+    // dbg!(source);
     let (source, _) = opt(tag(":"))(source)?;
     let (source, _) = space1(source)?;
+    // dbg!(source);
     Ok((source, ""))
 }
 
+fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
+    dbg!(&source);
+    Ok((source, None))
+}
+
 fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
-    let (source, cmd) = tuple((body_part, colon_separator, hex_color))(source)?;
-    Ok((source, BearCommand::Cmd((cmd.0, cmd.2))))
+    let (source, cmd) = tuple((body_part, colon_separator, get_color_by_name))(source)?;
+    // Ok((source, BearCommand::Cmd((cmd.0, cmd.2))))
+    Ok((source, BearCommand::None))
 }
 
 fn body_part(source: &str) -> IResult<&str, BodyPart> {
@@ -407,19 +417,19 @@ fn part_body(source: &str) -> IResult<&str, BodyPart> {
     Ok((source, BodyPart::Body))
 }
 
-fn hex_color(source: &str) -> IResult<&str, Color> {
-    let (source, x) = tuple((
-        tag("#"),
-        hex_digit0,
-        hex_digit0,
-        hex_digit0,
-        hex_digit0,
-        hex_digit0,
-        hex_digit0,
-    ))(source)?;
-    let clr = Color::Hex(format!("{}{}{}{}{}{}{}", x.0, x.1, x.2, x.3, x.4, x.5, x.6));
-    Ok((source, clr))
-}
+// fn hex_color(source: &str) -> IResult<&str, Color> {
+//     let (source, x) = tuple((
+//         tag("#"),
+//         hex_digit0,
+//         hex_digit0,
+//         hex_digit0,
+//         hex_digit0,
+//         hex_digit0,
+//         hex_digit0,
+//     ))(source)?;
+//     let clr = Color::Hex(format!("{}{}{}{}{}{}{}", x.0, x.1, x.2, x.3, x.4, x.5, x.6));
+//     Ok((source, clr))
+// }
 
 // !bear eyes: asdf asdf, body: werwer,
 

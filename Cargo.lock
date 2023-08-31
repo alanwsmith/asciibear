@@ -70,6 +70,7 @@ dependencies = [
  "axum",
  "bytes",
  "clang",
+ "color-name",
  "cpal",
  "device_query",
  "futures",
@@ -312,6 +313,12 @@ dependencies = [
  "libc",
  "libloading",
 ]
+
+[[package]]
+name = "color-name"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8cabd7573f60c1096a1e2bd82b2dc03a8063e607c698e15189a476c3541d65c"
 
 [[package]]
 name = "combine"
