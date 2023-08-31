@@ -158,7 +158,7 @@ async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
         *throttle_count += 1;
         if throttle_count.rem_euclid(3) == 0 {
             let x: f32 = data[0];
-            let mut payload = r#"{"key": "dB", "value": "#.to_string();
+            let mut payload = r#"{"key": "db", "value": "#.to_string();
             payload.push_str(x.to_string().as_str());
             payload.push_str(r#"}"#);
             let _ = tx.send(payload);
@@ -256,22 +256,10 @@ async fn mouse_watcher(tx: tokio::sync::broadcast::Sender<String>) {
 // }
 
 // !bear head: some color, keys: some color
-// !bear keys: asdf
-// !bear palette: asdf
 
 pub fn parse_incoming_twitch_message(source: &str) -> IResult<&str, Option<TwitchCommand>> {
     //dbg!(&source);
-    let (source, cmd) = opt(alt((
-        bear_command,
-        bear_command,
-        // twitch_bear_body,
-        // twitch_bear_head,
-        // twitch_bear_keys,
-        // twitch_bear_eyes,
-        // twitch_bearbg_color
-        // twitch_say_hi,
-        // twitch_say_hi,
-    )))(source)?;
+    let (source, cmd) = opt(alt((bear_command, bear_command)))(source)?;
     dbg!(&cmd);
     Ok((source, cmd))
 }
@@ -288,12 +276,10 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
                     if !said_hello_to.contains(&payload.sender.name) {
                         said_hello_to.insert(payload.clone().sender.name);
 
-                        // let tbs = TwitchShipment {
-                        //     key: Some("sayhi".to_string()),
-                        //     value: Some(format!("Hi {}!", payload.clone().sender.name)),
-                        // };
+                        let tbs =
+                            TwitchCommand::SayHi(format!("Hi {}!", payload.clone().sender.name));
 
-                        // let _ = tx.send(serde_json::to_string(&tbs).unwrap());
+                        let _ = tx.send(serde_json::to_string(&tbs).unwrap());
                     }
                     if let Some(twitch_shipment) =
                         parse_incoming_twitch_message(payload.clone().message_text.as_str())
@@ -314,14 +300,12 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
-    BearCommands {
-        key: String,
-        value: Vec<BearCommand>,
-    },
-    None,
+    Bear(Vec<BearCommand>),
+    SayHi(String),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum BearColor {
     Body(Option<String>),
     Eyes(Option<String>),
@@ -330,36 +314,14 @@ pub enum BearColor {
     None,
 }
 
-// #[derive(Debug, PartialEq, Serialize, Deserialize)]
-// pub enum BearInstruction {
-//     None,
-// }
-
 fn bear_command(source: &str) -> IResult<&str, TwitchCommand> {
-    // dbg!(&source);
     let (source, cmds) = preceded(tag_no_case("!bear "), bear_command_list)(source)?;
     dbg!(&cmds);
-    // let (source, _) = tag_no_case("!bear")(source)?;
-    // let (source, _) = opt(tag(":"))(source)?;
-    // let (source, _) = space1(source)?;
-    // let (source, colors) = separated_list1(tag(","), bear_color)(source)?;
-    // // let (source, colors) = many1(alt((head_color, body_color, keys_color, eyes_color)))(source)?;
-    // dbg!(&colors);
-    Ok((
-        source,
-        TwitchCommand::BearCommands {
-            key: "bear".to_string(),
-            value: cmds,
-        },
-    ))
+    Ok((source, TwitchCommand::Bear(cmds)))
 }
 
-// #[derive(Debug, PartialEq, Serialize, Deserialize)]
-// pub enum Color {
-//     Hex(String),
-// }
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum BodyPart {
     Head,
     Body,
@@ -369,8 +331,9 @@ pub enum BodyPart {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum BearCommand {
-    Cmd((BodyPart, [u8; 3])),
+    Color((BodyPart, [u8; 3])),
     None,
 }
 
@@ -381,12 +344,13 @@ fn bear_command_list(source: &str) -> IResult<&str, Vec<BearCommand>> {
 
 fn colon_separator(source: &str) -> IResult<&str, &str> {
     let (source, _) = opt(tag(":"))(source)?;
-    let (source, _) = space1(source)?;
+    let (source, _) = space0(source)?;
     Ok((source, ""))
 }
 
 fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
-    match Color::val().by_string(source.trim().to_string()) {
+    let (source, check_color) = is_not(",")(source)?;
+    match Color::val().by_string(check_color.trim().to_string()) {
         Ok(rgb_data) => Ok((source, Some(rgb_data))),
         Err(_) => Ok((source, None)),
     }
@@ -395,7 +359,7 @@ fn get_color_by_name(source: &str) -> IResult<&str, Option<[u8; 3]>> {
 fn bear_command_prep(source: &str) -> IResult<&str, BearCommand> {
     let (source, cmd) = tuple((body_part, colon_separator, get_color_by_name))(source)?;
     match cmd.2 {
-        Some(rgb_data) => Ok((source, BearCommand::Cmd((cmd.0, cmd.2.unwrap())))),
+        Some(rgb_data) => Ok((source, BearCommand::Color((cmd.0, cmd.2.unwrap())))),
         None => Ok((source, BearCommand::None)),
     }
 }

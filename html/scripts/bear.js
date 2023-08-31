@@ -5,6 +5,7 @@ import {
   log,
 } from '/scripts/xstate_4_38_2_dist_web.js'
 
+
 class Bear {
   constructor() {
     this.actor = null
@@ -807,12 +808,12 @@ class Bear {
     this.ws.onmessage = (event) => {
       // console.log(event)
       const payload = JSON.parse(event.data)
-      if (payload.key !== 'db' && payload.key !== 'key') {
-        log(payload)
+      if (payload.key !== 'db' && payload.key !== 'key' && payload.key !== 'mousemove') {
+        console.log(payload)
       }
 
-      if (payload.key === 'dB') {
-        if (payload.value > 0.007) {
+      if (payload.key === 'db') {
+        if (payload.value > 0.006) {
           this.actor.send({ type: 'STARTTALKING' })
         }
       } else if (payload.key === 'key') {
