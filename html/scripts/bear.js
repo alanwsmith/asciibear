@@ -30,7 +30,6 @@ class Bear {
           countdown_water: 0,
           countdown_speech_bubble: 0,
           isMousing: false,
-          // isMousingBuffer: 0,
           isTalking: false,
           isTyping: false,
           lastActiveKeyboard: null,
@@ -79,7 +78,7 @@ class Bear {
                         // },
                         isMousing: (context) => {
                           // if (context.isMousingBuffer > 10) {
-                            return true
+                          return true
                           // } else {
                           //   return false
                           // }
@@ -808,6 +807,10 @@ class Bear {
     this.ws.onmessage = (event) => {
       // console.log(event)
       const payload = JSON.parse(event.data)
+      if (payload.key !== 'db' && payload.key !== 'key') {
+        log(payload)
+      }
+
       if (payload.key === 'dB') {
         if (payload.value > 0.007) {
           this.actor.send({ type: 'STARTTALKING' })
@@ -822,8 +825,8 @@ class Bear {
         const newStyleSheet = document.createElement('style')
         const newStyleText = document.createTextNode(
           `.forward-shoulders-base, .looking-shoulders-base {
-      color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
-    }`
+            color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
+          }`
         )
         newStyleSheet.appendChild(newStyleText)
         document.head.appendChild(newStyleSheet)
