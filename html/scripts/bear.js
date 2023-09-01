@@ -818,34 +818,17 @@ class Bear {
         }
       } else if (payload.key === 'bearcolorhead') {
         document.documentElement.style.setProperty('--head-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
-      } else if (payload.key === 'key') {
-        this.actor.send({ type: 'STARTTYPING' })
-
-      } else if (payload.key === 'mousemove') {
-        this.actor.send({ type: 'STARTMOUSING' })
       } else if (payload.key === 'bearcolorbody') {
-        // console.log(payload)
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.forward-shoulders-base, .looking-shoulders-base {
-            color: rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]});
-          }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
+        document.documentElement.style.setProperty('--body-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'bearcoloreyes') {
         document.documentElement.style.setProperty('--eyes-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'bearcolorkeys') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .mouse-active {
-            color: rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]});
-      }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
+        document.documentElement.style.setProperty('--keys-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'key') {
+        this.actor.send({ type: 'STARTTYPING' })
+      } else if (payload.key === 'mousemove') {
+        this.actor.send({ type: 'STARTMOUSING' })
       } else if (payload.key === 'sayhi') {
-        // console.log('Got Rust Message To Say Hi')
         this.actor.send({ type: 'SAYHI', name: payload.value })
       } else if (payload.key === 'screen_position') {
       } else if (payload.key === 'test') {
