@@ -817,14 +817,7 @@ class Bear {
           this.actor.send({ type: 'STARTTALKING' })
         }
       } else if (payload.key === 'bearcolorhead') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.forward-head-base, .looking-head-base, .looking-snout-base, .looking-mouth-closed, .looking-mouth-talking, .forward-snout-up, .forward-snout-down, .forward-mouth-closed, .forward-mouth-talking, .typing-mouth-closed, .typing-mouth-talking {
-            color: rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]});
-          }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
+        document.documentElement.style.setProperty('--head-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'key') {
         this.actor.send({ type: 'STARTTYPING' })
 
@@ -841,14 +834,7 @@ class Bear {
         newStyleSheet.appendChild(newStyleText)
         document.head.appendChild(newStyleSheet)
       } else if (payload.key === 'bearcoloreyes') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
-            color: rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]});
-      }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
+        document.documentElement.style.setProperty('--eyes-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'bearcolorkeys') {
         const newStyleSheet = document.createElement('style')
         const newStyleText = document.createTextNode(

@@ -17,9 +17,12 @@
     })
   </script>
   <style>
-
-    
-
+    :root {
+      --body-color: rgb(213, 23, 145);
+      --eyes-color: rgb(213, 23, 145);
+      --head-color: rgb(213, 23, 145);
+      --keys-color: rgb(213, 23, 145);
+    }
 
     *,
     *::before,
@@ -35,7 +38,7 @@
       padding: 0;
       margin: 0;
       background-color: #000;
-      color: goldenrod;
+      /* color: goldenrod; */
       font-family: monospace;
       font-size: 1rem;
     }
@@ -98,6 +101,19 @@
     .speech-bubble-mat,
     .mouse-active-mat {
       color: black;
+    }
+
+    
+
+
+
+    .forward-head-base, .looking-head-base, .looking-snout-base, .looking-mouth-closed, .looking-mouth-talking, .forward-snout-up, .forward-snout-down, .forward-mouth-closed, .forward-mouth-talking, .typing-mouth-closed, .typing-mouth-talking
+    {
+      color: var(--head-color);
+    }
+
+    .looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
+      color: var(--eyes-color);
     }
 
     #speechDiv {

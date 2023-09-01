@@ -220,10 +220,12 @@ async fn twitch_listener(tx: tokio::sync::broadcast::Sender<String>) {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "key", content = "value", rename_all = "lowercase")]
 pub enum TwitchCommand {
+    BearColorBg1([u8; 3]),
+    BearColorBg2([u8; 3]),
+    BearColorBody([u8; 3]),
+    BearColorEyes([u8; 3]),
     BearColorHead([u8; 3]),
     BearColorKeys([u8; 3]),
-    BearColorEyes([u8; 3]),
-    BearColorBody([u8; 3]),
     SayHi(String),
 }
 
@@ -233,6 +235,8 @@ fn bear_color(source: &str) -> IResult<&str, TwitchCommand> {
         bear_color_eyes,
         bear_color_keys,
         bear_color_body,
+        bear_color_bg1,
+        bear_color_bg2,
     ))(source)?;
     Ok((source, color))
 }
@@ -256,6 +260,16 @@ fn rgb_color(source: &str) -> IResult<&str, [u8; 3]> {
 fn bear_color_head(source: &str) -> IResult<&str, TwitchCommand> {
     let (source, rgb) = preceded(pair(tag("!head"), space1), rgb_color)(source)?;
     Ok((source, TwitchCommand::BearColorHead(rgb)))
+}
+
+fn bear_color_bg1(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!bg1"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorBg1(rgb)))
+}
+
+fn bear_color_bg2(source: &str) -> IResult<&str, TwitchCommand> {
+    let (source, rgb) = preceded(pair(tag("!bg2"), space1), rgb_color)(source)?;
+    Ok((source, TwitchCommand::BearColorBg2(rgb)))
 }
 
 fn bear_color_eyes(source: &str) -> IResult<&str, TwitchCommand> {
