@@ -18,10 +18,13 @@
   </script>
   <style>
     :root {
-      --body-color: rgb(213, 23, 145);
-      --eyes-color: rgb(213, 23, 145);
-      --head-color: rgb(213, 23, 145);
-      --keys-color: rgb(213, 23, 145);
+      --body-color: firebrick;
+      --eyes-color: blue;
+      --head-color: crimson;
+      --keys-color: darkblue;
+      --bg1-color: darkslateblue;
+      --bg2-color: darkorchid;
+      --tub-color: green;
     }
 
     *,
@@ -67,7 +70,7 @@
     }
 
     .hottub-border {
-      color: #bf7737;
+      color: var(--tub-color);
     }
 
     #canvasFrame {
@@ -82,13 +85,13 @@
     #canvasBackground1 {
       font-size: 0.7rem;
       margin: 2rem;
-      color: blue;
+      color: var(--bg1-color);
     }
 
     #canvasBackground2 {
       font-size: 0.7rem;
       margin: 2.4rem;
-      color: green;
+      color: var(--bg2-color);
     }
 
     .activePixel {
@@ -103,11 +106,11 @@
       color: black;
     }
 
-    .forward-shoulders-base, .looking-shoulders-base {
+    .forward-shoulders-base, .looking-shoulders-base, .mouse-active, .hottub-keyboard-hands {
       color: var(--body-color);
     }
 
-    .keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .mouse-active, .hottub-keyboard-active, .keyboard-inactive, .keyboard-hottub-inactive {
+    .keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .hottub-keyboard-active, .keyboard-inactive, .keyboard-hottub-inactive {
       color: var(--keys-color);
     }
 
