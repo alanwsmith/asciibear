@@ -38,6 +38,7 @@ use opencv::videostab::NullFrameSource;
 use serde::Deserialize;
 use serde::Serialize;
 use std::net::SocketAddr;
+use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
@@ -74,6 +75,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
+    try_to_set_tmux_title("ASCII_BEAR");
     let (tx, _rx) = broadcast::channel(100);
     let _mic_listener_handle = tokio::spawn(mic_listener(tx.clone()));
     let _key_watcher_handle = tokio::spawn(key_watcher(tx.clone()));
@@ -289,6 +291,11 @@ fn bear_color_body(source: &str) -> IResult<&str, TwitchCommand> {
 
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
+}
+
+pub fn try_to_set_tmux_title(title: &str) {
+    let args: Vec<&str> = vec!["select-pane", "-T", title];
+    let _ = Command::new("tmux").args(args).output().unwrap();
 }
 
 // async fn rtmp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
