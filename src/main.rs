@@ -122,13 +122,13 @@ async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
         let check_throttle = mic_throttle.clone();
         let mut throttle_count = check_throttle.lock().unwrap();
         *throttle_count += 1;
-        if throttle_count.rem_euclid(3) == 0 {
+        //if throttle_count.rem_euclid(3) == 0 {
             let x: f32 = data[0];
             let mut payload = r#"{"key": "db", "value": "#.to_string();
             payload.push_str(x.to_string().as_str());
             payload.push_str(r#"}"#);
             let _ = tx.send(payload);
-        }
+        //}
     };
     let input_stream = device
         .build_input_stream(&config, input_sender, err_fn, None)
