@@ -18,8 +18,44 @@
   </script>
   <style>
 
-    
+/* cyrillic */
+@font-face {
+  font-family: 'Rubik Mono One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/UqyJK8kPP3hjw6ANTdfRk9YSN98zTKUJcOj89zQ.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Rubik Mono One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/UqyJK8kPP3hjw6ANTdfRk9YSN985TKUJcOj89zQ.woff2) format('woff2');
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Rubik Mono One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/UqyJK8kPP3hjw6ANTdfRk9YSN983TKUJcOj8.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
+
+    :root {
+      --body-color: firebrick;
+      --eyes-color: gold;
+      --head-color: crimson;
+      --keys-color: darkkhaki;
+      --bg1-color: darkslateblue;
+      --bg2-color: darkorchid;
+      --tub-color: green;
+    }
 
     *,
     *::before,
@@ -35,9 +71,8 @@
       padding: 0;
       margin: 0;
       background-color: #000;
-      color: goldenrod;
-      font-family: monospace;
-      font-size: 1rem;
+      /* color: goldenrod; */
+      font-family: "Rubik Mono One";
     }
 
     input {
@@ -46,10 +81,12 @@
     }
 
     .pixel {
-      font-family: monospace;
+      font-family: "Rubik Mono One";
+      font-size: 0.7rem;
+      font-weight: bold;
       min-width: 1.1ch;
       max-width: 1.1ch;
-      height: 1.5rem;
+      height: 1.6rem;
       padding: 0;
       border: 0;
       margin: 0;
@@ -64,7 +101,7 @@
     }
 
     .hottub-border {
-      color: #bf7737;
+      color: var(--tub-color);
     }
 
     #canvasFrame {
@@ -77,15 +114,15 @@
     }
 
     #canvasBackground1 {
-      font-size: 0.7rem;
+      font-size: 0.5rem;
       margin: 2rem;
-      color: blue;
+      color: var(--bg1-color);
     }
 
     #canvasBackground2 {
-      font-size: 0.7rem;
+      font-size: 0.5rem;
       margin: 2.4rem;
-      color: green;
+      color: var(--bg2-color);
     }
 
     .activePixel {
@@ -100,11 +137,34 @@
       color: black;
     }
 
+    .forward-shoulders-base, .looking-shoulders-base, .mouse-active, .hottub-keyboard-hands {
+      color: var(--body-color);
+    }
+
+    .keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .hottub-keyboard-active, .keyboard-inactive, .keyboard-hottub-inactive {
+      color: var(--keys-color);
+    }
+
+    .forward-head-base, .looking-head-base, .looking-snout-base, .looking-mouth-closed, .looking-mouth-talking, .forward-snout-up, .forward-snout-down, .forward-mouth-closed, .forward-mouth-talking, .typing-mouth-closed, .typing-mouth-talking
+    {
+      color: var(--head-color);
+    }
+
+    .looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
+      color: var(--eyes-color);
+    }
+
     #speechDiv {
       margin-left: 8.6rem;
       margin-top: 1.8rem;
       font-size: 2.7rem;
     }
+
+    .debugText {
+      font-size: 1.8rem;
+      color: #aaa;
+    }
+
   </style>
 </head>
 
@@ -117,6 +177,9 @@
       <div id="speechBubble" class="frameLayer"></div>
     </div>
   </main>
+  <div id="testOutput1" class="debugText"></div>
+  <div id="testOutput2" class="debugText"></div>
+  <div id="testOutput3" class="debugText"></div>
 </body>
 
 </html>

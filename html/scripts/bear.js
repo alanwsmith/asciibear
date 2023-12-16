@@ -5,6 +5,7 @@ import {
   log,
 } from '/scripts/xstate_4_38_2_dist_web.js'
 
+
 class Bear {
   constructor() {
     this.actor = null
@@ -30,7 +31,6 @@ class Bear {
           countdown_water: 0,
           countdown_speech_bubble: 0,
           isMousing: false,
-          // isMousingBuffer: 0,
           isTalking: false,
           isTyping: false,
           lastActiveKeyboard: null,
@@ -40,13 +40,16 @@ class Bear {
           visibleLayers: [],
           currentSpeechBubble: null,
         },
+
         states: {
+
           loading: {
             entry: log('Starting...'),
             on: {
               KICKOFF: { target: 'alive' },
             },
           },
+
           alive: {
             type: 'parallel',
             states: {
@@ -79,7 +82,7 @@ class Bear {
                         // },
                         isMousing: (context) => {
                           // if (context.isMousingBuffer > 10) {
-                            return true
+                          return true
                           // } else {
                           //   return false
                           // }
@@ -90,6 +93,7 @@ class Bear {
                       {
                         delay: () => {
                           return 450
+                          // return 10
                         },
                         target: 'mouseNotMoving',
                       },
@@ -106,6 +110,8 @@ class Bear {
                     entry: [
                       assign({
                         isTalking: () => {
+                          // testOutput1.innerHTML = ""
+                          // testOutput2.innerHTML = ""
                           return false
                         },
                       }),
@@ -116,6 +122,7 @@ class Bear {
                     entry: [
                       assign({
                         isTalking: () => {
+                          // testOutput2.innerHTML = "x"
                           return true
                         },
                       }),
@@ -123,7 +130,9 @@ class Bear {
                     after: [
                       {
                         delay: () => {
+                          // testOutput2.innerHTML = ""
                           return 150
+                          // return 45
                         },
                         target: 'mouthNotMoving',
                       },
@@ -158,6 +167,7 @@ class Bear {
                       {
                         delay: () => {
                           return 410
+                          // return 10
                         },
                         target: 'typingOff',
                       },
@@ -360,6 +370,7 @@ class Bear {
                           if (context.pointing === 'looking') {
                             newLayers.push(this.pickLayer('looking-head-mat'))
                             newLayers.push(this.pickLayer('looking-head-base'))
+                            // newLayers.push(this.pickLayer('hottub-keyboard-hands'))
                           } else {
                             newLayers.push(this.pickLayer('forward-head-mat'))
                             newLayers.push(this.pickLayer('forward-head-base'))
@@ -413,35 +424,76 @@ class Bear {
                         },
                       }),
                     ],
-                    after: { target: 'hottub_keyboard_pick' },
+                    after: { target: 'water_pick' },
                   },
 
-                  keyboard_pick: {
+
+
+                  water_pick: {
                     entry: [
                       assign({
-                        lastActiveKeyboard: (context) => {
-                          if (context.isMousing) {
-                            if (context.lastActiveKeyboard === null) {
-                              return this.pickLayer('mouse-keyboard')
-                            } else if (context.countdown_keyboard === 0) {
-                              return this.pickLayer('mouse-keyboard')
-                            } else {
-                              return context.lastActiveKeyboard
-                              //return this.pickLayer('mouse-keyboard')
+                        lastWater: (context) => {
+                          if (context.lastWater === null) {
+                            return this.pickLayer('hottub-water')
+                          } else if (context.countdown_water === 0) {
+                            let newWater = null
+                            for (let i = 0; i < 50; i++) {
+                              newWater = this.pickLayer('hottub-water')
+                              if (newWater !== context.lastWater) {
+                                break
+                              }
                             }
+                            return newWater
                           } else {
-                            if (context.lastActiveKeyboard === null) {
-                              return this.pickLayer('keyboard-active')
-                            } else if (context.countdown_keyboard === 0) {
-                              return this.pickLayer('keyboard-active')
-                            } else {
-                              return context.lastActiveKeyboard
-                              //return this.pickLayer('keyboard-active')
-                            }
+                            return context.lastWater
                           }
                         },
                       }),
                     ],
+                    after: { target: 'water_switch' },
+                  },
+                  water_switch: {
+                    entry: [
+                      assign({
+                        visibleLayers: (context) => {
+                          const newLayers = [...context.visibleLayers]
+                          newLayers.push(context.lastWater)
+                          return newLayers
+                        },
+                      }),
+                    ],
+                    after: { target: 'hottub_keyboard_pick' },
+                  },
+
+
+
+
+                  keyboard_pick: {
+                    // entry: [
+                    //   assign({
+                    //     lastActiveKeyboard: (context) => {
+                    //       if (context.isMousing) {
+                    //         if (context.lastActiveKeyboard === null) {
+                    //           return this.pickLayer('mouse-keyboard')
+                    //         } else if (context.countdown_keyboard === 0) {
+                    //           return this.pickLayer('mouse-keyboard')
+                    //         } else {
+                    //           return context.lastActiveKeyboard
+                    //           //return this.pickLayer('mouse-keyboard')
+                    //         }
+                    //       } else {
+                    //         if (context.lastActiveKeyboard === null) {
+                    //           return this.pickLayer('keyboard-active')
+                    //         } else if (context.countdown_keyboard === 0) {
+                    //           return this.pickLayer('keyboard-active')
+                    //         } else {
+                    //           return context.lastActiveKeyboard
+                    //           //return this.pickLayer('keyboard-active')
+                    //         }
+                    //       }
+                    //     },
+                    //   }),
+                    // ],
                     after: { target: 'keyboard_switch' },
                   },
                   hottub_keyboard_pick: {
@@ -450,16 +502,28 @@ class Bear {
                         lastActiveKeyboard: (context) => {
                           if (context.isMousing) {
                             if (context.lastActiveKeyboard === null) {
+                              // const newThing = this.pickLayer('hottub-keyboard-hands')
+                              // console.log(newThing)
+                              // return newThing
                               return this.pickLayer('hottub-keyboard-active')
                             } else if (context.countdown_keyboard === 0) {
+                              // const newThing = this.pickLayer('hottub-keyboard-hands')
+                              // console.log(newThing)
+                              // return newThing
                               return this.pickLayer('hottub-keyboard-active')
                             } else {
                               return context.lastActiveKeyboard
                             }
                           } else {
                             if (context.lastActiveKeyboard === null) {
+                              // const newThing = this.pickLayer('hottub-keyboard-hands')
+                              // console.log(newThing)
+                              // return newThing
                               return this.pickLayer('hottub-keyboard-active')
                             } else if (context.countdown_keyboard === 0) {
+                              // const newThing = this.pickLayer('hottub-keyboard-hands')
+                              // console.log(newThing)
+                              // return newThing
                               return this.pickLayer('hottub-keyboard-active')
                             } else {
                               return context.lastActiveKeyboard
@@ -476,11 +540,16 @@ class Bear {
                         visibleLayers: (context) => {
                           const newLayers = [...context.visibleLayers]
                           if (context.isTyping) {
-                            newLayers.push(context.lastActiveKeyboard)
+                            // newLayers.push(context.lastActiveKeyboard)
+                            newLayers.push(this.pickLayer('keyboard-hottub-inactive'))
+                            newLayers.push(this.pickLayer('hottub-keyboard-hands'))
                             //newLayers.push(this.pickLayer('keyboard-active'))
                           } else {
                             newLayers.push(
+                              // this.pickLayer('keyboard-hottub-inactive')
                               this.pickLayer('keyboard-hottub-inactive')
+                              // this.pickLayer('hottub-keyboard')
+                              // this.pickLayer('hottub-keyboard-hands')
                             )
                           }
                           return newLayers
@@ -606,43 +675,10 @@ class Bear {
                         },
                       }),
                     ],
-                    after: { target: 'water_pick' },
-                  },
-                  water_pick: {
-                    entry: [
-                      assign({
-                        lastWater: (context) => {
-                          if (context.lastWater === null) {
-                            return this.pickLayer('hottub-water')
-                          } else if (context.countdown_water === 0) {
-                            let newWater = null
-                            for (let i = 0; i < 50; i++) {
-                              newWater = this.pickLayer('hottub-water')
-                              if (newWater !== context.lastWater) {
-                                break
-                              }
-                            }
-                            return newWater
-                          } else {
-                            return context.lastWater
-                          }
-                        },
-                      }),
-                    ],
-                    after: { target: 'water_switch' },
-                  },
-                  water_switch: {
-                    entry: [
-                      assign({
-                        visibleLayers: (context) => {
-                          const newLayers = [...context.visibleLayers]
-                          newLayers.push(context.lastWater)
-                          return newLayers
-                        },
-                      }),
-                    ],
                     after: { target: 'delay' },
                   },
+
+
                   delay: {
                     entry: [
                       // log((context, e) => `VL: ${context.isTyping}`),
@@ -651,7 +687,10 @@ class Bear {
                     after: [
                       {
                         delay: () => {
-                          return Math.floor(Math.random() * 33) + 98
+                          // NOTE: set this at 33 at one point but things
+                          // updated a little too fast and it didn't help
+                          // with the delay in the mic setup. TBD on that
+                          return Math.floor(Math.random() * 43) + 138
                         },
                         target: 'start_update',
                       },
@@ -675,35 +714,35 @@ class Bear {
   }
 
   make_background_grid_1() {
-    const newT = document.createElement('table')
-    newT.id = 'canvasBackgroundTable1'
-    for (let r = 0; r <= this.gridBgRows; r++) {
-      const newTr = document.createElement('tr')
-      for (let c = 0; c <= this.gridBgCols; c++) {
-        const newTd = document.createElement('td')
-        newTd.classList.add('pixel')
-        newTd.innerHTML = '.'
-        newTr.appendChild(newTd)
-      }
-      newT.appendChild(newTr)
-    }
-    canvasBackground1.appendChild(newT)
+    // const newT = document.createElement('table')
+    // newT.id = 'canvasBackgroundTable1'
+    // for (let r = 0; r <= this.gridBgRows; r++) {
+    //   const newTr = document.createElement('tr')
+    //   for (let c = 0; c <= this.gridBgCols; c++) {
+    //     const newTd = document.createElement('td')
+    //     newTd.classList.add('pixel')
+    //     newTd.innerHTML = '.'
+    //     newTr.appendChild(newTd)
+    //   }
+    //   newT.appendChild(newTr)
+    // }
+    // canvasBackground1.appendChild(newT)
   }
 
   make_background_grid_2() {
-    const newT = document.createElement('table')
-    newT.id = 'canvasBackgroundTable2'
-    for (let r = 0; r <= this.gridBgRows; r++) {
-      const newTr = document.createElement('tr')
-      for (let c = 0; c <= this.gridBgCols; c++) {
-        const newTd = document.createElement('td')
-        newTd.classList.add('pixel')
-        newTd.innerHTML = '.'
-        newTr.appendChild(newTd)
-      }
-      newT.appendChild(newTr)
-    }
-    canvasBackground2.appendChild(newT)
+    // const newT = document.createElement('table')
+    // newT.id = 'canvasBackgroundTable2'
+    // for (let r = 0; r <= this.gridBgRows; r++) {
+    //   const newTr = document.createElement('tr')
+    //   for (let c = 0; c <= this.gridBgCols; c++) {
+    //     const newTd = document.createElement('td')
+    //     newTd.classList.add('pixel')
+    //     newTd.innerHTML = '.'
+    //     newTr.appendChild(newTd)
+    //   }
+    //   newT.appendChild(newTr)
+    // }
+    // canvasBackground2.appendChild(newT)
   }
 
   make_grid(data) {
@@ -762,7 +801,13 @@ class Bear {
     this.actor = interpret(this.machine).start()
     this.actor.subscribe((state) => {
       if (state.context.trigger) {
+        // if (state.context.isTalking) {
+        //   console.log(`IS TALKING A`)
+        // }
         window.requestAnimationFrame(() => {
+          // if (state.context.isTalking) {
+          //   console.log(`ANI START`)
+          // }
           if (this.layers[0] !== undefined) {
             this.layers[0].rows.forEach((row, rIndex) => {
               row.forEach((pixel, pIndex) => {
@@ -796,6 +841,12 @@ class Bear {
               speechDiv.innerHTML = ''
             }
           }
+
+          // if (state.context.isTalking) {
+          //   console.log(`ANI END`)
+          // }
+
+          // 
         })
       }
     })
@@ -808,54 +859,30 @@ class Bear {
     this.ws.onmessage = (event) => {
       // console.log(event)
       const payload = JSON.parse(event.data)
-      if (payload.key === 'dB') {
-        if (payload.value > 0.007) {
-          this.actor.send({ type: 'STARTTALKING' })
-        }
+      if (payload.key !== 'db' && payload.key !== 'key' && payload.key !== 'mousemove') {
+        console.log(payload)
+      }
+
+      if (payload.key === 'db') {
+        console.log(payload)
+        this.actor.send({ type: 'STARTTALKING' })
+      } else if (payload.key === 'bearcolorhead') {
+        document.documentElement.style.setProperty('--head-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'bearcolorbody') {
+        document.documentElement.style.setProperty('--body-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'bearcoloreyes') {
+        document.documentElement.style.setProperty('--eyes-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'bearcolorkeys') {
+        document.documentElement.style.setProperty('--keys-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'bearcolorbg1') {
+        document.documentElement.style.setProperty('--bg1-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
+      } else if (payload.key === 'bearcolorbg2') {
+        document.documentElement.style.setProperty('--bg2-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'key') {
         this.actor.send({ type: 'STARTTYPING' })
-
       } else if (payload.key === 'mousemove') {
         this.actor.send({ type: 'STARTMOUSING' })
-      } else if (payload.key === 'bearbody') {
-        // console.log(payload)
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.forward-shoulders-base, .looking-shoulders-base {
-      color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
-    }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
-      } else if (payload.key === 'beareyes') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.looking-eyes-open, .looking-eyes-blinking, .forward-eyes-open, .typing-eyes-open, .typing-eyes-blinking, .forward-eyes-blinking {
-        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
-      }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
-      } else if (payload.key === 'bearhead') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.forward-head-base, .looking-head-base, .looking-snout-base, .looking-mouth-closed, .looking-mouth-talking, .forward-snout-up, .forward-snout-down, .forward-mouth-closed, .forward-mouth-talking, .typing-mouth-closed, .typing-mouth-talking {
-        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
-      }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
-      } else if (payload.key === 'bearkeys') {
-        const newStyleSheet = document.createElement('style')
-        const newStyleText = document.createTextNode(
-          `.keyboard-inactive, .keyboard-active, .mouse-keyboard, .mouse-inactive, .mouse-active {
-        color: rgb(${payload.value.red}, ${payload.value.green}, ${payload.value.blue});
-      }`
-        )
-        newStyleSheet.appendChild(newStyleText)
-        document.head.appendChild(newStyleSheet)
       } else if (payload.key === 'sayhi') {
-        // console.log('Got Rust Message To Say Hi')
         this.actor.send({ type: 'SAYHI', name: payload.value })
       } else if (payload.key === 'screen_position') {
       } else if (payload.key === 'test') {
