@@ -40,13 +40,16 @@ class Bear {
           visibleLayers: [],
           currentSpeechBubble: null,
         },
+
         states: {
+
           loading: {
             entry: log('Starting...'),
             on: {
               KICKOFF: { target: 'alive' },
             },
           },
+
           alive: {
             type: 'parallel',
             states: {
@@ -90,6 +93,7 @@ class Bear {
                       {
                         delay: () => {
                           return 450
+                          // return 10
                         },
                         target: 'mouseNotMoving',
                       },
@@ -106,6 +110,8 @@ class Bear {
                     entry: [
                       assign({
                         isTalking: () => {
+                          // testOutput1.innerHTML = ""
+                          // testOutput2.innerHTML = ""
                           return false
                         },
                       }),
@@ -116,6 +122,7 @@ class Bear {
                     entry: [
                       assign({
                         isTalking: () => {
+                          // testOutput2.innerHTML = "x"
                           return true
                         },
                       }),
@@ -123,7 +130,9 @@ class Bear {
                     after: [
                       {
                         delay: () => {
+                          // testOutput2.innerHTML = ""
                           return 150
+                          // return 45
                         },
                         target: 'mouthNotMoving',
                       },
@@ -158,6 +167,7 @@ class Bear {
                       {
                         delay: () => {
                           return 410
+                          // return 10
                         },
                         target: 'typingOff',
                       },
@@ -418,7 +428,7 @@ class Bear {
                   },
 
 
-                                    
+
                   water_pick: {
                     entry: [
                       assign({
@@ -677,6 +687,9 @@ class Bear {
                     after: [
                       {
                         delay: () => {
+                          // NOTE: set this at 33 at one point but things
+                          // updated a little too fast and it didn't help
+                          // with the delay in the mic setup. TBD on that
                           return Math.floor(Math.random() * 43) + 138
                         },
                         target: 'start_update',
@@ -701,35 +714,35 @@ class Bear {
   }
 
   make_background_grid_1() {
-    const newT = document.createElement('table')
-    newT.id = 'canvasBackgroundTable1'
-    for (let r = 0; r <= this.gridBgRows; r++) {
-      const newTr = document.createElement('tr')
-      for (let c = 0; c <= this.gridBgCols; c++) {
-        const newTd = document.createElement('td')
-        newTd.classList.add('pixel')
-        newTd.innerHTML = '.'
-        newTr.appendChild(newTd)
-      }
-      newT.appendChild(newTr)
-    }
-    canvasBackground1.appendChild(newT)
+    // const newT = document.createElement('table')
+    // newT.id = 'canvasBackgroundTable1'
+    // for (let r = 0; r <= this.gridBgRows; r++) {
+    //   const newTr = document.createElement('tr')
+    //   for (let c = 0; c <= this.gridBgCols; c++) {
+    //     const newTd = document.createElement('td')
+    //     newTd.classList.add('pixel')
+    //     newTd.innerHTML = '.'
+    //     newTr.appendChild(newTd)
+    //   }
+    //   newT.appendChild(newTr)
+    // }
+    // canvasBackground1.appendChild(newT)
   }
 
   make_background_grid_2() {
-    const newT = document.createElement('table')
-    newT.id = 'canvasBackgroundTable2'
-    for (let r = 0; r <= this.gridBgRows; r++) {
-      const newTr = document.createElement('tr')
-      for (let c = 0; c <= this.gridBgCols; c++) {
-        const newTd = document.createElement('td')
-        newTd.classList.add('pixel')
-        newTd.innerHTML = '.'
-        newTr.appendChild(newTd)
-      }
-      newT.appendChild(newTr)
-    }
-    canvasBackground2.appendChild(newT)
+    // const newT = document.createElement('table')
+    // newT.id = 'canvasBackgroundTable2'
+    // for (let r = 0; r <= this.gridBgRows; r++) {
+    //   const newTr = document.createElement('tr')
+    //   for (let c = 0; c <= this.gridBgCols; c++) {
+    //     const newTd = document.createElement('td')
+    //     newTd.classList.add('pixel')
+    //     newTd.innerHTML = '.'
+    //     newTr.appendChild(newTd)
+    //   }
+    //   newT.appendChild(newTr)
+    // }
+    // canvasBackground2.appendChild(newT)
   }
 
   make_grid(data) {
@@ -788,7 +801,13 @@ class Bear {
     this.actor = interpret(this.machine).start()
     this.actor.subscribe((state) => {
       if (state.context.trigger) {
+        // if (state.context.isTalking) {
+        //   console.log(`IS TALKING A`)
+        // }
         window.requestAnimationFrame(() => {
+          // if (state.context.isTalking) {
+          //   console.log(`ANI START`)
+          // }
           if (this.layers[0] !== undefined) {
             this.layers[0].rows.forEach((row, rIndex) => {
               row.forEach((pixel, pIndex) => {
@@ -822,6 +841,12 @@ class Bear {
               speechDiv.innerHTML = ''
             }
           }
+
+          // if (state.context.isTalking) {
+          //   console.log(`ANI END`)
+          // }
+
+          // 
         })
       }
     })
@@ -839,9 +864,8 @@ class Bear {
       }
 
       if (payload.key === 'db') {
-        if (payload.value > 0.006) {
-          this.actor.send({ type: 'STARTTALKING' })
-        }
+        console.log(payload)
+        this.actor.send({ type: 'STARTTALKING' })
       } else if (payload.key === 'bearcolorhead') {
         document.documentElement.style.setProperty('--head-color', `rgb(${payload.value[0]}, ${payload.value[1]}, ${payload.value[2]})`);
       } else if (payload.key === 'bearcolorbody') {

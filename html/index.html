@@ -73,7 +73,6 @@
       background-color: #000;
       /* color: goldenrod; */
       font-family: "Rubik Mono One";
-      font-size: 1rem;
     }
 
     input {
@@ -83,10 +82,11 @@
 
     .pixel {
       font-family: "Rubik Mono One";
+      font-size: 0.7rem;
       font-weight: bold;
       min-width: 1.1ch;
       max-width: 1.1ch;
-      height: 1.9rem;
+      height: 1.6rem;
       padding: 0;
       border: 0;
       margin: 0;
@@ -114,13 +114,13 @@
     }
 
     #canvasBackground1 {
-      font-size: 0.7rem;
+      font-size: 0.5rem;
       margin: 2rem;
       color: var(--bg1-color);
     }
 
     #canvasBackground2 {
-      font-size: 0.7rem;
+      font-size: 0.5rem;
       margin: 2.4rem;
       color: var(--bg2-color);
     }
@@ -159,6 +159,12 @@
       margin-top: 1.8rem;
       font-size: 2.7rem;
     }
+
+    .debugText {
+      font-size: 1.8rem;
+      color: #aaa;
+    }
+
   </style>
 </head>
 
@@ -171,6 +177,9 @@
       <div id="speechBubble" class="frameLayer"></div>
     </div>
   </main>
+  <div id="testOutput1" class="debugText"></div>
+  <div id="testOutput2" class="debugText"></div>
+  <div id="testOutput3" class="debugText"></div>
 </body>
 
 </html>

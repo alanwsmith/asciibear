@@ -119,15 +119,18 @@ async fn mic_listener(tx: tokio::sync::broadcast::Sender<String>) {
         .expect("no input device available");
     let config: cpal::StreamConfig = device.default_input_config().unwrap().into();
     let input_sender = move |data: &[f32], _cb: &cpal::InputCallbackInfo| {
-        let check_throttle = mic_throttle.clone();
-        let mut throttle_count = check_throttle.lock().unwrap();
-        *throttle_count += 1;
+        // let check_throttle = mic_throttle.clone();
+        //let mut throttle_count = check_throttle.lock().unwrap();
+        // *throttle_count += 1;
         //if throttle_count.rem_euclid(3) == 0 {
-            let x: f32 = data[0];
+        let x: f32 = data[0];
+        if (x > 0.003) {
             let mut payload = r#"{"key": "db", "value": "#.to_string();
             payload.push_str(x.to_string().as_str());
             payload.push_str(r#"}"#);
+            println!("--- {}", &payload);
             let _ = tx.send(payload);
+        }
         //}
     };
     let input_stream = device
@@ -141,7 +144,8 @@ async fn page_websocket_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| page_websocket(socket, state))
+    // .write_buffer_size doesn't seem to have worked
+    ws.write_buffer_size(10).on_upgrade(|socket| page_websocket(socket, state))
 }
 
 async fn page_websocket(stream: WebSocket, state: Arc<AppState>) {
@@ -150,8 +154,12 @@ async fn page_websocket(stream: WebSocket, state: Arc<AppState>) {
     let mut rx = state.tx.subscribe();
     let _send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
+            println!("### {}", &msg);
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
+            } else {
+                sender.flush();
+                println!("xxxxxxxxxxxxxxx");
             }
         }
     });
